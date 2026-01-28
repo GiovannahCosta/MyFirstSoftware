@@ -7,11 +7,12 @@ public class Address {
 	private Integer number;
 	private String complement;
 	private String reference;
-	private Integer idArea;
+	private Area area;
 	
 	public Address() {}
 	
-	public Address(Integer idArea, String cep, String street, Integer number, String complement, String reference) {
+	public Address(Area area, String cep, String street, Integer number, String complement, String reference) {
+		setArea(area);
 		setCep(cep);
 		setStreet(street);
 		setNumber(number);
@@ -61,16 +62,20 @@ public class Address {
 	public void setReference(String reference) {
 		this.reference = reference;
 	}
+
+	public void setArea(Area area){
+		this.area = area;
+	}
 	
-	public Integer getIdArea() {
-		return this.idArea;
+	public Area getArea() {
+		return this.area;
 	}
 
 	@Override
 	public String toString() {
 		return "Address [getInteger()=" + getInteger() + ", getCep()=" + getCep() + ", getStreet()=" + getStreet()
 				+ ", getNumber()=" + getNumber() + ", getComplement()=" + getComplement() + ", getReference()="
-				+ getReference() + ", getIdArea()=" + getIdArea() + "]";
+				+ getReference() + ", getIdArea()=" + getArea() + "]";
 	}
 	
 

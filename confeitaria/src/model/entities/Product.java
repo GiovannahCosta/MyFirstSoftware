@@ -6,21 +6,24 @@ public class Product {
 	private String description;
 	private Double price;
 	private Size size;
-	private Flavor flavor;
+	private String flavor;
+	private FlavorLevel level;
 	
 	public Product() {}
 	
-	public Product(String name, Flavor flavor, Size size, Double price) {
+	public Product(String name, String flavor, FlavorLevel level, Size size, Double price) {
 		setName(name);
 		setFlavor(flavor);
+		setLevel(level);
 		setSize(size);
 		setPrice(price);
 	}
 	
-	public Product(String name, Flavor flavor, Size size, Double price, String description) {
+	public Product(String name, String flavor, FlavorLevel level, Size size, Double price, String description) {
 		setName(name);
 		setDescription(description);
 		setFlavor(flavor);
+		setLevel(level);
 		setSize(size);
 		setPrice(price);
 	}
@@ -50,12 +53,21 @@ public class Product {
 	}
 	
 	
-	public Flavor getFlavor() {
+	public String getFlavor() {
 		return this.flavor;
 	}
 
-	public void setFlavor(Flavor flavor) {
+	public void setFlavor(String flavor) {
 		this.flavor = flavor;
+	}
+
+
+	public FlavorLevel getLevel(){
+		return this.level;
+	}
+
+	public void setLevel(FlavorLevel level){
+		this.level = level;
 	}
 
 	public Size getSize() {

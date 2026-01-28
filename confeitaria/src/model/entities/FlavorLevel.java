@@ -1,6 +1,6 @@
 package model.entities;
 
 public enum FlavorLevel {
-	Tradicional,
-	Especial
+	TRADICIONAL,
+	ESPECIAL
 }

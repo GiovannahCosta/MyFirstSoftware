@@ -19,6 +19,9 @@ public class User extends Person {
 		Arrays.fill(password,'0');
 	}
 	
+	public void setIdUser(Integer idUser){
+		this.idUser = idUser;
+	}
 	public Integer getIdUser() {
 		return this.idUser;
 	}

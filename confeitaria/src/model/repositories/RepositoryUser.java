@@ -1,10 +1,12 @@
 package model.repositories;
 
 
+import model.entities.Person;
 import model.entities.User;
 import java.sql.Connection;
 import java.sql.SQLException; 
-import java.sql.PreparedStatement; 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import model.entities.User;
 
@@ -13,7 +15,7 @@ public class RepositoryUser {
 	private static final String insertUser = "INSERT INTO user(firstName, lastName, email, password_hash) VALUES (?,?) "
 			+ "ON CONFLICT (email) DO NOTHING";
 
-	
+
 	public boolean createUser(User user) throws SQLException {
 		try (Connection conn = DBConnection.getConnection();
 			PreparedStatement stmt = conn.prepareStatement(insertUser)) { 
@@ -33,8 +35,5 @@ public class RepositoryUser {
 		}
 	}
 	
-	
-	private static final String insertPerson= "INSERT INTO person(firstName, lastName, email) VALUES (?, ?)"
-			+ "ON CONFLICT (email) DO NOTHING";
 
 }
