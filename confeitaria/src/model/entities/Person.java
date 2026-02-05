@@ -23,6 +23,9 @@ public class Person {
 		setEmail(email);
 	}
 	
+	public void setId(Integer id){
+		this.id = id;
+	}
 	
 	public Integer getId() {
 		return this.id;

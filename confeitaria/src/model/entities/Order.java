@@ -16,6 +16,7 @@ public class Order {
 	public Order() {}
 	
 	public Order(Integer idUser, LocalDateTime dateTime, Double totalPrice, DeliveryType delivery, String observations) {
+		setIdUser(idUser);
 		setDateTime(dateTime);
 		setTotalPrice(totalPrice);
 		setObservations(observations);
@@ -41,15 +42,29 @@ public class Order {
 	}
 
 	public void setTotalPrice(Double totalPrice) {
-		this.totalPrice += totalPrice;
+		this.totalPrice = totalPrice;
 	}
-	
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public void setIdUser(Integer idUser) {
+		this.idUser = idUser;
+	}
+
+	public Integer getIdUser() {
+		return idUser;
+	}
+
 	public void calculateTotalPrice() {
 		double sum = 0.0;
-        for (OrderItems o : orderItems) {
-            sum += o.getPriceAtMoment();
-        }
-        
+		if (orderItems != null) {
+			for (OrderItems o : orderItems) {
+				sum += o.getPriceAtMoment() != null ? o.getPriceAtMoment() * o.getQuantity() : 0.0;
+			}
+		}
+		this.totalPrice = sum;
 	}	
 
 	public String getObservations() {
@@ -115,7 +130,7 @@ public class Order {
 
 	@Override
 	public String toString() {
-		return "Order [id=" + id + ", dateTime=" + dateTime + "orderItems=" + getOrderItems() + ", totalPrice=" + totalPrice
+		return "Order [id=" + id + ", dateTime=" + dateTime + ", orderItems=" + getOrderItems() + ", totalPrice=" + totalPrice
 				+ ", observations=" + observations + ", delivery=" + delivery + "]";
 	}
 	

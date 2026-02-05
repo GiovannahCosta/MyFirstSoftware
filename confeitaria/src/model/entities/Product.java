@@ -4,28 +4,19 @@ public class Product {
 	private Integer id;
 	private String name;
 	private String description;
-	private Double price;
+	private Double basePrice;
 	private Size size;
-	private String flavor;
-	private FlavorLevel level;
+	private Flavor flavor;
 	
 	public Product() {}
 	
-	public Product(String name, String flavor, FlavorLevel level, Size size, Double price) {
-		setName(name);
-		setFlavor(flavor);
-		setLevel(level);
-		setSize(size);
-		setPrice(price);
-	}
 	
-	public Product(String name, String flavor, FlavorLevel level, Size size, Double price, String description) {
+	public Product(String name, Flavor flavor, Size size, Double basePrice, String description) {
 		setName(name);
 		setDescription(description);
 		setFlavor(flavor);
-		setLevel(level);
 		setSize(size);
-		setPrice(price);
+		setBasePrice(basePrice);
 	}
 	
 	public void setId(Integer id) {
@@ -53,21 +44,12 @@ public class Product {
 	}
 	
 	
-	public String getFlavor() {
+	public Flavor getFlavor() {
 		return this.flavor;
 	}
 
-	public void setFlavor(String flavor) {
+	public void setFlavor(Flavor flavor) {
 		this.flavor = flavor;
-	}
-
-
-	public FlavorLevel getLevel(){
-		return this.level;
-	}
-
-	public void setLevel(FlavorLevel level){
-		this.level = level;
 	}
 
 	public Size getSize() {
@@ -78,21 +60,20 @@ public class Product {
 		this.size = size;
 	}
 
-	public Double getPrice() {
-		return this.price;
+	public Double getBasePrice() {
+		return this.basePrice;
 	}
 
-	public void setPrice(Double price) {
-		this.price = price;
+	public void setBasePrice(Double basePrice) {
+		this.basePrice = basePrice;
 	}
 
 	@Override
 	public String toString() {
 		return "Product [getId()=" + getId() + ", getName()=" + getName() + ", getDescription()=" + getDescription()
 				+ ", getFlavor()=" + getFlavor() + ", getSize()=" + getSize()
-				+ ", getPrice()=" + getPrice() + "]";
+				+ ", getBasePrice()=" + getBasePrice() + "]";
 	}	
-	
-	
+
 	
 }

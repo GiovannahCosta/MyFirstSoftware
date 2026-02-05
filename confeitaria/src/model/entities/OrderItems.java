@@ -16,7 +16,7 @@ public class OrderItems {
 	public OrderItems(Product product, Integer quantity, Double priceAtMoment) {
 		setProduct(product);
 		setQuantity(quantity);
-		setPriceAtMoment(product.getPrice());
+		setPriceAtMoment(priceAtMoment != null ? priceAtMoment : (product != null && product.getBasePrice() != null ? product.getBasePrice() : 0.0));
 	}
 
 	public Integer getId() {
@@ -49,7 +49,9 @@ public class OrderItems {
 	}
 	
 	public Double subtotal() {
-		return getQuantity() * getPriceAtMoment();
+		Integer qty = getQuantity();
+		Double price = getPriceAtMoment();
+		return (qty != null && price != null) ? qty * price : 0.0;
 	}
 
 	@Override

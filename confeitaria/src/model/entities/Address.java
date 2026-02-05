@@ -22,6 +22,10 @@ public class Address {
 	public Integer getInteger() {
 		return this.id;
 	}
+
+	public void setInteger(Integer id){
+		this.id = id;
+	}
 	
 	public String getCep() {
 		return this.cep;

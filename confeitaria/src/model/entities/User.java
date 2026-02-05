@@ -13,10 +13,22 @@ public class User extends Person {
 		super();
 	}
 	
-	public User(Integer idUser, String firstName, String lastName, String email, char[] password) throws Exception{
+	public User(Integer idUser, Integer idPerson, String firstName, String lastName, String email, char[] password) throws Exception {
 		super(firstName, lastName, email);
+		this.idUser = idUser;
+		if (idPerson != null) {
+			setId(idPerson);
+		}
 		this.passwordHash = EncryptionService.hashPassword(password);
-		Arrays.fill(password,'0');
+		Arrays.fill(password, '0');
+	}
+
+	/**
+	 * Construtor para criar usuário com id da person (para persistência).
+	 * Equivalente a new User(null, idPerson, firstName, lastName, email, password).
+	 */
+	public User(Integer idPerson, String firstName, String lastName, String email, char[] password) throws Exception {
+		this(null, idPerson, firstName, lastName, email, password);
 	}
 	
 	public void setIdUser(Integer idUser){
@@ -26,6 +38,11 @@ public class User extends Person {
 		return this.idUser;
 	}
 	
+	public void setPasswordHash(String passwordHash){
+		this.passwordHash = passwordHash;
+	}
+
+
 	public String getPasswordHash() {
 		return passwordHash;
 	}
