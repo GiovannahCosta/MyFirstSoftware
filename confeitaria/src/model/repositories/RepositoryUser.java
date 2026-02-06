@@ -24,8 +24,7 @@ public class RepositoryUser {
 	 * Exige que a person já exista (id_person = person.id).
 	 */
 	private static final String SQL_INSERT =
-			"INSERT INTO \"user\"(id_person, password_hash) VALUES (?,?) "
-			+ "ON CONFLICT (id_person) DO NOTHING";
+			"INSERT INTO \"user\" (id, password) VALUES (?, ?)";
 	
 	/**
 	 * SELECT por id com JOIN em person (first_name, last_name, email).

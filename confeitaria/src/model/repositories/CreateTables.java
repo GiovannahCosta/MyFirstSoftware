@@ -28,7 +28,7 @@ public class CreateTables {
 	 * Útil para testes que precisam de banco limpo a cada execução.
 	 */
 	public static void truncateAllTables() {
-		String sql = "TRUNCATE order_items, \"order\", product, \"user\", size, flavor, flavor_level, person, address, area RESTART IDENTITY CASCADE";
+		String sql = "TRUNCATE order_items, \"order\", product, \"user\", size, flavor, flavor_level, person, address RESTART IDENTITY CASCADE";
 		try (Connection conn = DBConnection.getConnection();
 				Statement stmt = conn.createStatement()) {
 			stmt.execute(sql);
