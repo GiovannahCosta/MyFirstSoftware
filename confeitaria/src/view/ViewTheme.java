@@ -7,14 +7,14 @@ import javax.swing.border.EmptyBorder;
 
 public class ViewTheme {
 	
-	public static final Color BACKGROUND = new Color(0xFFF9F5);
-    public static final Color CARD_BG = new Color(0xFFFDFB);
-    public static final Color ACCENT = new Color(0xB8860B);   // dark goldenrod
-    public static final Color ACCENT_HOVER = new Color(0xCD9B1D);
-    public static final Color TEXT = new Color(0x4A3728);
-    public static final Color TEXT_MUTED = new Color(0x6B5344);
-    public static final Color BORDER = new Color(0xE8D5C4);
-    public static final Color INPUT_BG = Color.WHITE;
+	public static final Color BACKGROUND = new Color(0xF7B6BD);
+    public static final Color CARD_BG = new Color(0xFAD1D6);
+    public static final Color ACCENT = new Color(0x6B3A2A);
+    public static final Color ACCENT_HOVER = new Color(0x7A4230);
+    public static final Color TEXT = new Color(0x6B3A2A);
+    public static final Color TEXT_MUTED = new Color(0x8B5A4A);
+    public static final Color BORDER = new Color(0xE2A5AD);
+    public static final Color INPUT_BG = new Color(0xFCECEE);
 
     // Fontes
     public static final String FONT_FAMILY = "Segoe UI";
@@ -22,7 +22,6 @@ public class ViewTheme {
     public static final Font FONT_SUBTITLE = new Font(FONT_FAMILY, Font.PLAIN, 14);
     public static final Font FONT_LABEL = new Font(FONT_FAMILY, Font.PLAIN, 12);
     public static final Font FONT_BUTTON = new Font(FONT_FAMILY, Font.BOLD, 13);
-    
     private ViewTheme() {}
     
     public static JPanel createPanel(int top, int left, int bottom, int right) {

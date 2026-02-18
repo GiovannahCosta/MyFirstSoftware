@@ -62,13 +62,21 @@ public class ViewCadastro extends JFrame {
     }
 	
 	private Component buildTitleSection() {
-        JPanel section = new JPanel();
-        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
-        section.setBackground(ViewTheme.BACKGROUND);
-
-        section.add(ViewTheme.createTitleLabel("Novo cadastro"));
-        section.add(Box.createVerticalStrut(4));
-        section.add(ViewTheme.createSubtitleLabel("Preencha os dados para se cadastrar"));
+		JPanel section = new JPanel(new BorderLayout(0, 6));
+		section.setBackground(ViewTheme.BACKGROUND);
+		JLabel label = ViewTheme.createFieldLabel("Novo Cadastro");
+		label.setFont(ViewTheme.FONT_TITLE);
+        label.setForeground(ViewTheme.ACCENT);
+        label.setAlignmentX(CENTER_ALIGNMENT);
+        section.add(label, BorderLayout.NORTH);
+		
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBackground(ViewTheme.BACKGROUND);
+        
+        content.add(Box.createVerticalStrut(4));
+        content.add(ViewTheme.createSubtitleLabel("Preencha os dados para se cadastrar"));
+        section.add(content, BorderLayout.CENTER);
         return section;
     }
 	
