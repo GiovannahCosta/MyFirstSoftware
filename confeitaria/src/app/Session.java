@@ -1,6 +1,7 @@
 package app;
 
 import model.entities.User;
+
 /**
  * Sessão do usuário logado (estado global em memória).
  * Armazena o usuário autenticado para permitir acesso por qualquer tela.
