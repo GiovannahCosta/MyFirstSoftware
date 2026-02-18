@@ -20,20 +20,62 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Controller responsável pelo caso de uso de Cadastro (registro de um novo usuário).
+ * O cadastro envolve múltiplas tabelas/entidades: {@link Address} (endereço), {@link Address} (endereço),{@link User} (credenciais / senha) 
+ * A View coleta dados do formulário e chama este controller.
+ * O controller valida regras, consulta dependências (ex.: área) e persiste entidades.
+ * Exceções são tipadas para a UI reagir corretamente
+ * este controller usa {@link AddressFactory}, {@link PersonFactory} e {@link UserFactory} para centralizar validações e criação das entidades.
+ *
+ */
+
 public class ControllerCadastro {
-
+	
+	/**
+	 * Repositório para persistência e consulta de {@link Person}
+	 * Usado para verificar se o email já existe e para inserir a pessoa.
+	 */
     private final RepositoryPerson repoPerson;
+    
+    
+    /**
+     * Repositório para persistência e consulta de {@link User}
+     * Usado para inserir credenciais (hash de senha ligado a uma {@link Person}).
+     */
     private final RepositoryUser repoUser;
+    
+    /**
+     * Repositório para persistência e consulta de {@link Address}.
+     * Usado para inserir endereço (que é FK em {@code person}).
+     */
     private final RepositoryAddress repoAddress;
+    
+    /**
+     * Repositório para persistência e consulta de {@link Area}.
+     * Usado para listar áreas na tela e validar a área selecionada no cadastro.
+     */
     private final RepositoryArea repoArea;
-
+    
+    /**
+     * Construtor padrão.
+     * Instancia os repositórios concretos para uso direto pelas Views.
+     */
     public ControllerCadastro() {
         this.repoArea = new RepositoryArea();
         this.repoPerson = new RepositoryPerson();
         this.repoUser = new RepositoryUser();
         this.repoAddress = new RepositoryAddress();
     }
-
+    
+    /**
+     * Construtor com injeção de dependências.
+     * Útil em testes automatizados ou para controlar instâncias de repositório.
+     * @param repoPerson repositório de pessoas
+     * @param repoUser repositório de usuários
+     * @param repoAddress repositório de endereços
+     * @param repoArea repositório de áreas
+     */
     public ControllerCadastro(RepositoryPerson repoPerson, RepositoryUser repoUser,
                               RepositoryAddress repoAddress, RepositoryArea repoArea) {
         this.repoPerson = repoPerson;
@@ -41,7 +83,15 @@ public class ControllerCadastro {
         this.repoAddress = repoAddress;
         this.repoArea = repoArea;
     }
-
+    
+    
+    /**
+     * Lista bairros/áreas para preencher o combobox da tela de cadastro.
+     * Chama {@link RepositoryArea#findAllArea()}
+     * Converte {@link SQLException} em {@link DataAccessException}.
+     * @return lista de áreas (pode ser vazia)
+     * @throws DataAccessException em falhas de acesso ao banco
+     */
     public List<Area> listAreas() throws DataAccessException {
         try {
             return repoArea.findAllArea();
@@ -49,7 +99,33 @@ public class ControllerCadastro {
             throw new DataAccessException("Erro ao carregar bairros/áreas.", e);
         }
     }
-
+    
+    
+    /**
+     * Realiza o cadastro completo de um usuário.
+     * Este método valida regras de entrada e persiste os dados na ordem correta por dependência
+     * Valida campos obrigatórios (nome, email, senha, área, rua etc.)
+     * Verifica duplicidade de email em {@code person} (UNIQUE) via {@link RepositoryPerson}.
+     * Valida se a {@link Area} selecionada existe via {@link RepositoryArea}
+     * Persiste endereço (gera id_address)
+     * Persiste pessoa (gera id_person)
+     * Cria usuário (hash de senha) e persiste em {@code user}
+     * limpa o array de senha em memória ao final.
+     * @param firstName limpa o array de senha em memória ao final.
+     * @param lastName sobrenome (opcional)
+     * @param email email (obrigatório)
+     * @param password senha em char[] (obrigatória, mínimo definido pela regra)
+     * @param idArea id da área selecionada (obrigatório)
+     * @param street rua (obrigatório)
+     * @param number número (opcional)
+     * @param cep CEP (opcional, mas geralmente recomendado)
+     * @param complement complemento (opcional)
+     * @param reference referência (opcional)
+     * @throws ValidationException validação de campos
+     * @throws ConflictException email duplicado
+     * @throws NotFoundException área inválida
+     * @throws DataAccessException falha ao acessar o banco
+     */
     public void register(String firstName, String lastName, String email,
                          char[] password, Integer idArea, String street, Integer number,
                          String cep, String complement, String reference)
@@ -96,7 +172,28 @@ public class ControllerCadastro {
             if (password != null) Arrays.fill(password, '\0');
         }
     }
-
+    
+    
+    /**
+     * Persiste um usuário completo (endereço + pessoa + usuário).
+     * Cria {@link Address} via {@link AddressFactory} e persiste, obtendo id_address.
+     * Cria {@link Address} via {@link AddressFactory} e persiste, obtendo id_address.
+     * Cria {@link Person} via {@link PersonFactory} e persiste, obtendo id_person.
+     * Este método é {@code private} porque representa implementação interna do caso de uso de cadastro.
+     * @param firstName nome já normalizado (trim)
+     * @param lastName sobrenome
+     * @param email email já normalizado (trim)
+     * @param password senha (char[])
+     * @param area senha (char[])
+     * @param street rua
+     * @param number número
+     * @param cep cep
+     * @param complement complemento
+     * @param reference referência
+     * @throws SQLException referência
+     * @throws ValidationException se alguma factory rejeitar dados
+     * @throws DataAccessException falha ao acessar o banco
+     */
     private void persistUser(String firstName, String lastName, String email,
                              char[] password, Area area, String street, Integer number,
                              String cep, String complement, String reference)
