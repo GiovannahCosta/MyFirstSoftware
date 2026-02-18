@@ -12,24 +12,23 @@ import java.util.List;
 public class RepositorySize {
 
     public static final String SQL_INSERT =
-            "INSERT INTO size(name, yield, weight, price) VALUES (?, ?, ?, ?)";
+            "INSERT INTO \"size\"(name, yield, weight, price) VALUES (?, ?, ?, ?)";
 
     public static final String SQL_DELETE =
-            "DELETE FROM size WHERE id = ?";
+            "DELETE FROM \"size\" WHERE id = ?";
 
     public static final String SQL_FIND_BY_ID =
             "SELECT id AS size_id, name AS size_name, yield AS size_yield, weight AS size_weight, price AS size_price "
-                    + "FROM size WHERE id = ?";
+                    + "FROM \"size\" WHERE id = ?";
 
     private static final String SQL_FIND_BY_NAME =
             "SELECT id AS size_id, name AS size_name, yield AS size_yield, weight AS size_weight, price AS size_price "
-                    + "FROM size WHERE name = ?";
+                    + "FROM \"size\" WHERE name = ?";
 
     private static final String SQL_FIND_ALL =
             "SELECT id AS size_id, name AS size_name, yield AS size_yield, weight AS size_weight, price AS size_price "
-                    + "FROM size ORDER BY id";
+                    + "FROM \"size\" ORDER BY id";
 
-    // (nome do método está estranho no seu projeto; mantive para não quebrar chamadas)
     public boolean createFlavorLevel(Size size) throws SQLException {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
