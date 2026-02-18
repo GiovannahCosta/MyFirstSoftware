@@ -1,19 +1,19 @@
 package view;
 
 import app.Session;
+import controller.ControllerShop;
+import exceptions.DataAccessException;
 import model.entities.Product;
-import model.repositories.RepositoryProduct;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ViewShopProducts extends JFrame {
 
-    private final RepositoryProduct repoProduct = new RepositoryProduct();
+    private final ControllerShop controller = new ControllerShop();
 
     private JTable tableProducts;
     private DefaultTableModel tableModel;
@@ -71,7 +71,7 @@ public class ViewShopProducts extends JFrame {
 
         JButton btnCart = ViewTheme.createSecondaryButton("Carrinho");
         btnCart.addActionListener(e -> new ViewCart().setVisible(true));
-        
+
         JButton btnMyOrders = ViewTheme.createSecondaryButton("Meus pedidos");
         btnMyOrders.addActionListener(e -> new ViewMyOrders().setVisible(true));
 
@@ -106,12 +106,14 @@ public class ViewShopProducts extends JFrame {
 
     private void refreshTable() {
         try {
-            products = repoProduct.findAllProduct();
+            products = controller.listAllProducts();
             tableModel.setRowCount(0);
 
             for (Product p : products) {
                 String flavorName = p.getFlavor() != null ? p.getFlavor().getName() : "";
-                String levelName = (p.getFlavor() != null && p.getFlavor().getLevel() != null) ? p.getFlavor().getLevel().getName() : "";
+                String levelName = (p.getFlavor() != null && p.getFlavor().getLevel() != null)
+                        ? p.getFlavor().getLevel().getName()
+                        : "";
                 String sizeName = p.getSize() != null ? p.getSize().getName() : "";
 
                 tableModel.addRow(new Object[]{
@@ -122,11 +124,8 @@ public class ViewShopProducts extends JFrame {
                         p.getBasePrice()
                 });
             }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao carregar produtos: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 

@@ -1,21 +1,23 @@
 package view;
 
 import app.Session;
+import controller.ControllerMyOrders;
+import exceptions.AppException;
+import exceptions.DataAccessException;
+import exceptions.ValidationException;
 import model.entities.OrderItemSummary;
 import model.entities.OrderSummary;
-import model.repositories.RepositoryMyOrders;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ViewMyOrders extends JFrame {
 
-    private final RepositoryMyOrders repo = new RepositoryMyOrders();
+    private final ControllerMyOrders controller = new ControllerMyOrders();
 
     private JTable tableOrders;
     private DefaultTableModel modelOrders;
@@ -129,10 +131,11 @@ public class ViewMyOrders extends JFrame {
         modelOrders.setRowCount(0);
         modelItems.setRowCount(0);
         labelOrderTitle.setText("Itens do pedido: (selecione um pedido)");
+        orders = new ArrayList<>();
 
         try {
             Integer idUser = Session.getLoggedUser().getIdUser();
-            orders = repo.findOrdersByUser(idUser);
+            orders = controller.listOrdersByUser(idUser);
 
             for (OrderSummary o : orders) {
                 String dt = o.getDatetime() != null ? fmt.format(o.getDatetime()) : "";
@@ -144,11 +147,12 @@ public class ViewMyOrders extends JFrame {
                 });
             }
 
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao carregar pedidos: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (ValidationException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Atenção", JOptionPane.WARNING_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        } catch (AppException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -164,7 +168,7 @@ public class ViewMyOrders extends JFrame {
         modelItems.setRowCount(0);
 
         try {
-            List<OrderItemSummary> items = repo.findItemsByOrder(idOrder);
+            List<OrderItemSummary> items = controller.listItems(idOrder);
             labelOrderTitle.setText("Itens do pedido: #" + idOrder);
 
             for (OrderItemSummary it : items) {
@@ -178,11 +182,12 @@ public class ViewMyOrders extends JFrame {
                         String.format("R$ %.2f", unit * qty)
                 });
             }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao carregar itens: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (ValidationException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Atenção", JOptionPane.WARNING_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        } catch (AppException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 

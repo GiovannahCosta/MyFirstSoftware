@@ -1,6 +1,7 @@
 package view;
 
-import app.CartSession;
+import controller.ControllerCart;
+import exceptions.ValidationException;
 import model.entities.Product;
 
 import javax.swing.*;
@@ -9,11 +10,20 @@ import java.awt.*;
 public class ViewProductDetails extends JFrame {
 
     private final Product product;
+    private final ControllerCart controllerCart = new ControllerCart();
+
     private JSpinner spinnerQty;
     private JLabel labelUnitPrice;
     private JLabel labelTotal;
 
     public ViewProductDetails(Product product) {
+        if (product == null) {
+            JOptionPane.showMessageDialog(this, "Produto inválido.", "Erro", JOptionPane.ERROR_MESSAGE);
+            dispose();
+            this.product = null;
+            return;
+        }
+
         this.product = product;
         configureFrame();
         setContentPane(buildMainPanel());
@@ -37,7 +47,9 @@ public class ViewProductDetails extends JFrame {
         panel.add(Box.createVerticalStrut(10));
 
         String flavor = product.getFlavor() != null ? product.getFlavor().getName() : "";
-        String level = (product.getFlavor() != null && product.getFlavor().getLevel() != null) ? product.getFlavor().getLevel().getName() : "";
+        String level = (product.getFlavor() != null && product.getFlavor().getLevel() != null)
+                ? product.getFlavor().getLevel().getName()
+                : "";
         String size = product.getSize() != null ? product.getSize().getName() : "";
 
         panel.add(ViewTheme.createSubtitleLabel("Sabor: " + flavor));
@@ -80,9 +92,21 @@ public class ViewProductDetails extends JFrame {
     }
 
     private void onAdd() {
-        int qty = (Integer) spinnerQty.getValue();
-        CartSession.add(product, qty);
-        JOptionPane.showMessageDialog(this, "Adicionado ao carrinho!");
+        try {
+            Integer qty = (Integer) spinnerQty.getValue();
+            controllerCart.addProduct(product, qty);
+
+            JOptionPane.showMessageDialog(this,
+                    "Adicionado ao carrinho!",
+                    "Carrinho",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (ValidationException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     private void updateTotals() {
@@ -94,9 +118,6 @@ public class ViewProductDetails extends JFrame {
         labelTotal.setText(String.format("Total: R$ %.2f", total));
     }
 
-    /**
-     * Preço unitário = base_price + size.price + flavor_level.price
-     */
     private static double computeUnitPrice(Product p) {
         double base = p.getBasePrice() != null ? p.getBasePrice() : 0.0;
 

@@ -1,21 +1,20 @@
 package view;
 
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.SQLException;
-
-import javax.swing.*;
-
 import controller.ControllerCadastro;
+import exceptions.AppException;
+import exceptions.ConflictException;
+import exceptions.DataAccessException;
+import exceptions.NotFoundException;
+import exceptions.ValidationException;
 import model.entities.Area;
 
-import java.util.ArrayList;
+import javax.swing.*;
+import java.awt.*;
 import java.util.List;
 
 public class ViewCadastro extends JFrame {
-	
-	private JTextField fieldFirstName;
+
+    private JTextField fieldFirstName;
     private JTextField fieldLastName;
     private JTextField fieldEmail;
     private JPasswordField fieldPassword;
@@ -25,25 +24,25 @@ public class ViewCadastro extends JFrame {
     private JTextField fieldCep;
     private JTextField fieldComplement;
     private JTextField fieldReference;
-	private ControllerCadastro controller;
-	
-	public ViewCadastro() {
-		this.controller = new ControllerCadastro();
+
+    private final ControllerCadastro controller;
+
+    public ViewCadastro() {
+        this.controller = new ControllerCadastro();
         configureFrame();
         setContentPane(buildMainPanel());
     }
-	
-	public void configureFrame() {
-		setTitle("Cadastrar - Sistema de Confeitaria");
+
+    public void configureFrame() {
+        setTitle("Cadastrar - Sistema de Confeitaria");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(440, 560);
         setLocationRelativeTo(null);
         setResizable(false);
         getContentPane().setBackground(ViewTheme.BACKGROUND);
-	}
-    
-	
-	private JScrollPane buildMainPanel() {
+    }
+
+    private JScrollPane buildMainPanel() {
         JPanel panel = ViewTheme.createPanel(24, 28, 24, 28);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
@@ -60,27 +59,27 @@ public class ViewCadastro extends JFrame {
         scroll.getViewport().setBackground(ViewTheme.BACKGROUND);
         return scroll;
     }
-	
-	private Component buildTitleSection() {
-		JPanel section = new JPanel(new BorderLayout(0, 6));
-		section.setBackground(ViewTheme.BACKGROUND);
-		JLabel label = ViewTheme.createFieldLabel("Novo Cadastro");
-		label.setFont(ViewTheme.FONT_TITLE);
+
+    private Component buildTitleSection() {
+        JPanel section = new JPanel(new BorderLayout(0, 6));
+        section.setBackground(ViewTheme.BACKGROUND);
+        JLabel label = ViewTheme.createFieldLabel("Novo Cadastro");
+        label.setFont(ViewTheme.FONT_TITLE);
         label.setForeground(ViewTheme.ACCENT);
         label.setAlignmentX(CENTER_ALIGNMENT);
         section.add(label, BorderLayout.NORTH);
-		
+
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBackground(ViewTheme.BACKGROUND);
-        
+
         content.add(Box.createVerticalStrut(4));
         content.add(ViewTheme.createSubtitleLabel("Preencha os dados para se cadastrar"));
         section.add(content, BorderLayout.CENTER);
         return section;
     }
-	
-	private Component buildPersonalSection() {
+
+    private Component buildPersonalSection() {
         JPanel section = ViewTheme.createSection("Dados pessoais");
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -97,8 +96,8 @@ public class ViewCadastro extends JFrame {
         section.add(content, BorderLayout.CENTER);
         return section;
     }
-	
-	private Component buildAddressSection() {
+
+    private Component buildAddressSection() {
         JPanel section = ViewTheme.createSection("Endereço");
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -121,95 +120,105 @@ public class ViewCadastro extends JFrame {
         section.add(content, BorderLayout.CENTER);
         return section;
     }
-	
-	private JPanel addFieldRow(String labelText, JComponent field) {
+
+    private JPanel addFieldRow(String labelText, JComponent field) {
         JPanel row = new JPanel(new BorderLayout(0, 4));
         row.setBackground(ViewTheme.BACKGROUND);
         row.add(ViewTheme.createFieldLabel(labelText), BorderLayout.NORTH);
         row.add(field, BorderLayout.CENTER);
         return row;
     }
-	
-	private Component buildButtonsSection() {
-		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+
+    private Component buildButtonsSection() {
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         buttons.setBackground(ViewTheme.BACKGROUND);
-        
+
         JButton btnBack = ViewTheme.createSecondaryButton("Voltar");
         btnBack.addActionListener(e -> {
             this.dispose();
             new ViewHome().setVisible(true);
         });
-        
+
         JButton btnRegister = ViewTheme.createPrimaryButton("Cadastrar");
         btnRegister.addActionListener(e -> onRegisterClick());
-        
+
         buttons.add(btnBack);
         buttons.add(btnRegister);
         return buttons;
-	}
-	
-	private JComboBox<Area> buildAreaCombo() {
-		
-		comboArea = new JComboBox<>();
-		
-	    try {
-	  
-	    	
-	        List<Area> areas = this.controller.listAreas();
-	        
-	     
-	        
-	        for (Area a : areas) {
-	        	comboArea.addItem(a);
-	        }
-	        
-	        
-	    } catch (Exception e) {
-	        JOptionPane.showMessageDialog(this, "Erro ao carregar áreas: " + e.getMessage());
-	    }
-	    
-	    return comboArea;
-	}
-	
-	private void onRegisterClick() {
-		try {
-			Area areaSelecionada = (Area) comboArea.getSelectedItem();
-			Integer idArea = null;
-	        
-			if (areaSelecionada != null) {
-	            idArea = areaSelecionada.getId();
-	        }
-			
-			Integer number = null;
-	        if (!fieldNumber.getText().isEmpty()) {
-	            number = Integer.parseInt(fieldNumber.getText());
-	        }
-	        
-			String firstName = fieldFirstName.getText();
-			String lastName = fieldLastName.getText();
-			String email = fieldEmail.getText();
-			char[] password = fieldPassword.getPassword();
-			String street = fieldStreet.getText();
-			String cep = fieldCep.getText();
-			String complement = fieldComplement.getText();
-			String reference = fieldReference.getText();
-			
-			this.controller.register(firstName, lastName, email, password, idArea, street, number, cep, complement, reference);
-			
-			
-			JOptionPane.showMessageDialog(this, "Cadastro realizado com sucesso!", "Cadastro", JOptionPane.INFORMATION_MESSAGE);
-	        dispose();
-			
-		} catch (NumberFormatException e) {
-	        JOptionPane.showMessageDialog(this, "O campo 'Número' deve conter apenas dígitos válidos.");
-	    } catch (Exception e) {
-	        JOptionPane.showMessageDialog(this, "Erro ao registrar: " + e.getMessage());
-	    }
-		
-	}
-		
-	
-	
-	
-    
+    }
+
+    private JComboBox<Area> buildAreaCombo() {
+        comboArea = new JComboBox<>();
+
+        try {
+            List<Area> areas = controller.listAreas();
+            for (Area a : areas) comboArea.addItem(a);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
+        return comboArea;
+    }
+
+    private void onRegisterClick() {
+        try {
+            Area areaSelecionada = (Area) comboArea.getSelectedItem();
+            Integer idArea = areaSelecionada != null ? areaSelecionada.getId() : null;
+
+            Integer number = null;
+            if (fieldNumber.getText() != null && !fieldNumber.getText().trim().isEmpty()) {
+                number = Integer.parseInt(fieldNumber.getText().trim());
+            }
+
+            String firstName = fieldFirstName.getText();
+            String lastName = fieldLastName.getText();
+            String email = fieldEmail.getText();
+            char[] password = fieldPassword.getPassword();
+            String street = fieldStreet.getText();
+            String cep = fieldCep.getText();
+            String complement = fieldComplement.getText();
+            String reference = fieldReference.getText();
+
+            controller.register(firstName, lastName, email, password, idArea, street, number, cep, complement, reference);
+
+            JOptionPane.showMessageDialog(this,
+                    "Cadastro realizado com sucesso!",
+                    "Cadastro",
+                    JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                    "O campo 'Número' deve conter apenas dígitos válidos.",
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE);
+
+        } catch (ValidationException | NotFoundException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Atenção",
+                    JOptionPane.WARNING_MESSAGE);
+
+        } catch (ConflictException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
+
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
+
+        } catch (AppException e) {
+            JOptionPane.showMessageDialog(this,
+                    e.getMessage(),
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 }

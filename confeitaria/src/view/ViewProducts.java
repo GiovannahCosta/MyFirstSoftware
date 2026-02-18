@@ -1,33 +1,21 @@
 package view;
 
-import model.entities.Flavor;
+import controller.ControllerProductAdmin;
+import exceptions.DataAccessException;
+import exceptions.ValidationException;
 import model.entities.FlavorLevel;
 import model.entities.Product;
 import model.entities.Size;
-import model.repositories.RepositoryFlavor;
-import model.repositories.RepositoryFlavorLevel;
-import model.repositories.RepositoryProduct;
-import model.repositories.RepositorySize;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Tela Admin de Produtos:
- * - sempre cria um novo Flavor (nome digitado) com FlavorLevel selecionado (opção A)
- * - seleciona Size no combo
- * - cria Product apontando para esse Flavor + Size
- */
 public class ViewProducts extends JFrame {
 
-    private final RepositoryProduct repoProduct = new RepositoryProduct();
-    private final RepositoryFlavor repoFlavor = new RepositoryFlavor();
-    private final RepositoryFlavorLevel repoLevel = new RepositoryFlavorLevel();
-    private final RepositorySize repoSize = new RepositorySize();
+    private final ControllerProductAdmin controller = new ControllerProductAdmin();
 
     private JTextField fieldProductName;
     private JTextField fieldBasePrice;
@@ -139,7 +127,7 @@ public class ViewProducts extends JFrame {
 
         JButton btnReload = ViewTheme.createSecondaryButton("Recarregar");
         btnReload.addActionListener(e -> refreshTable());
-        
+
         JButton btnDelete = ViewTheme.createSecondaryButton("Excluir");
         btnDelete.addActionListener(e -> onDelete());
 
@@ -156,7 +144,7 @@ public class ViewProducts extends JFrame {
         tablePanel.setBackground(ViewTheme.CARD_BG);
 
         tableModel = new DefaultTableModel(
-                new String[]{"Produto", "Sabor", "Nível", "Tamanho", "Preço base"}, 0
+                new String[]{"Produto", "Sabor", "Nível", "Tamanho", "Preço final"}, 0
         ) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
@@ -174,33 +162,30 @@ public class ViewProducts extends JFrame {
     private void loadCombos() {
         try {
             comboFlavorLevel.removeAllItems();
-            for (FlavorLevel lvl : repoLevel.findAllFlavorLevel()) {
+            for (FlavorLevel lvl : controller.listFlavorLevels()) {
                 comboFlavorLevel.addItem(lvl);
             }
 
             comboSize.removeAllItems();
-            for (Size size : repoSize.findAllSize()) {
+            for (Size size : controller.listSizes()) {
                 comboSize.addItem(size);
             }
 
             if (comboFlavorLevel.getItemCount() == 0 || comboSize.getItemCount() == 0) {
                 JOptionPane.showMessageDialog(this,
                         "Não existem níveis de sabor ou tamanhos no banco.\n" +
-                                "Verifique o SeedService (seedFlavorLevelsIfEmpty / seedSizesIfEmpty).",
+                                "Verifique o SeedService.",
                         "Atenção",
                         JOptionPane.WARNING_MESSAGE);
             }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao carregar combos: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void refreshTable() {
         try {
-            products = repoProduct.findAllProduct();
+            products = controller.listProducts();
             tableModel.setRowCount(0);
 
             for (Product p : products) {
@@ -208,20 +193,28 @@ public class ViewProducts extends JFrame {
                 String levelName = (p.getFlavor() != null && p.getFlavor().getLevel() != null) ? p.getFlavor().getLevel().getName() : "";
                 String sizeName = (p.getSize() != null) ? p.getSize().getName() : "";
 
+                double finalPrice = computeFinalUnitPrice(p);
+
                 tableModel.addRow(new Object[]{
                         p.getName(),
                         flavorName,
                         levelName,
                         sizeName,
-                        p.getBasePrice()
+                        String.format("R$ %.2f", finalPrice)
                 });
             }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao listar produtos: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private static double computeFinalUnitPrice(Product p) {
+        double base = p.getBasePrice() != null ? p.getBasePrice() : 0.0;
+        double sizePrice = (p.getSize() != null && p.getSize().getPrice() != null) ? p.getSize().getPrice() : 0.0;
+        double levelPrice = (p.getFlavor() != null && p.getFlavor().getLevel() != null && p.getFlavor().getLevel().getPrice() != null)
+                ? p.getFlavor().getLevel().getPrice()
+                : 0.0;
+        return base + sizePrice + levelPrice;
     }
 
     private void onSave() {
@@ -233,23 +226,6 @@ public class ViewProducts extends JFrame {
         FlavorLevel level = (FlavorLevel) comboFlavorLevel.getSelectedItem();
         Size size = (Size) comboSize.getSelectedItem();
 
-        if (productName.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Informe o nome do produto.", "Atenção", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        if (flavorName.isBlank()) {
-            JOptionPane.showMessageDialog(this, "Informe o nome do sabor.", "Atenção", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        if (level == null) {
-            JOptionPane.showMessageDialog(this, "Selecione um nível de sabor.", "Atenção", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        if (size == null) {
-            JOptionPane.showMessageDialog(this, "Selecione um tamanho.", "Atenção", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
         Double basePrice;
         try {
             basePrice = Double.parseDouble(basePriceText.replace(",", "."));
@@ -259,29 +235,47 @@ public class ViewProducts extends JFrame {
         }
 
         try {
-            // Opção A: sempre cria um novo sabor
-            Flavor newFlavor = new Flavor(flavorName, level, null);
-            Integer newFlavorId = repoFlavor.createFlavorAndReturnId(newFlavor);
-            if (newFlavorId == null) {
-                JOptionPane.showMessageDialog(this, "Não foi possível criar o sabor.", "Erro", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            newFlavor.setId(newFlavorId);
-
-            Product product = new Product(productName, newFlavor, size, basePrice, description);
-            boolean ok = repoProduct.createProduct(product);
-            if (!ok) {
-                JOptionPane.showMessageDialog(this, "Não foi possível salvar o produto.", "Erro", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
+            controller.createProductWithNewFlavor(productName, basePrice, flavorName, level, size, description);
             clearForm();
             refreshTable();
-        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Produto salvo com sucesso!", "Produtos", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (ValidationException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Atenção", JOptionPane.WARNING_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void onDelete() {
+        int row = tableProducts.getSelectedRow();
+        if (row < 0 || row >= products.size()) {
             JOptionPane.showMessageDialog(this,
-                    "Erro ao salvar: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Selecione um produto na tabela para excluir.",
+                    "Produtos",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Product selected = products.get(row);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Deseja excluir o produto \"" + selected.getName() + "\"?",
+                "Confirmar exclusão",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            controller.deleteProduct(selected);
+            clearForm();
+            refreshTable();
+            JOptionPane.showMessageDialog(this, "Produto excluído com sucesso!", "Produtos", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (ValidationException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Atenção", JOptionPane.WARNING_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -326,47 +320,6 @@ public class ViewProducts extends JFrame {
                 setText(((Size) value).getName());
             }
             return this;
-        }
-    }
-    
-    
-    private void onDelete() {
-        int row = tableProducts.getSelectedRow();
-        if (row < 0 || row >= products.size()) {
-            JOptionPane.showMessageDialog(this,
-                    "Selecione um produto na tabela para excluir.",
-                    "Produtos",
-                    JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-
-        Product selected = products.get(row);
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Deseja excluir o produto \"" + selected.getName() + "\"?",
-                "Confirmar exclusão",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm != JOptionPane.YES_OPTION) return;
-
-        try {
-            boolean ok = repoProduct.deleteProduct(selected);
-            if (!ok) {
-                JOptionPane.showMessageDialog(this,
-                        "Não foi possível excluir o produto.",
-                        "Produtos",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            clearForm();
-            refreshTable();
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao excluir: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }

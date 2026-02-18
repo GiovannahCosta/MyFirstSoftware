@@ -2,26 +2,26 @@ package view;
 
 import app.CartSession;
 import app.Session;
+import controller.ControllerCheckout;
+import exceptions.AppException;
+import exceptions.DataAccessException;
+import exceptions.ValidationException;
 import model.entities.Person;
 import model.entities.Product;
-import model.repositories.RepositoryOrder;
-import model.repositories.RepositoryOrderItems;
 import model.repositories.RepositoryPerson;
 import model.repositories.RepositoryProduct;
 
 import javax.swing.*;
 import java.awt.*;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.Map;
 
 public class ViewCheckout extends JFrame {
 
     private final RepositoryProduct repoProduct = new RepositoryProduct();
     private final RepositoryPerson repoPerson = new RepositoryPerson();
-    private final RepositoryOrder repoOrder = new RepositoryOrder();
-    private final RepositoryOrderItems repoOrderItems = new RepositoryOrderItems();
+
+    private final ControllerCheckout controllerCheckout = new ControllerCheckout();
 
     private JRadioButton radioEntrega;
     private JRadioButton radioRetirada;
@@ -86,7 +86,6 @@ public class ViewCheckout extends JFrame {
     private Component buildHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(ViewTheme.BACKGROUND);
-
         header.add(ViewTheme.createTitleLabel("Checkout"), BorderLayout.WEST);
         return header;
     }
@@ -212,7 +211,6 @@ public class ViewCheckout extends JFrame {
 
     private double computeDeliveryFeeFromUserArea() {
         try {
-            // Busca pessoa/endereço/área pelo email do usuário logado
             String email = Session.getLoggedUser().getEmail();
             Person p = repoPerson.findByEmailPerson(email);
             if (p == null || p.getAddress() == null || p.getAddress().getArea() == null) return 0.0;
@@ -253,64 +251,29 @@ public class ViewCheckout extends JFrame {
         String delivery = radioEntrega.isSelected() ? "ENTREGA" : "RETIRADA";
         String obs = fieldObs.getText() != null ? fieldObs.getText().trim() : null;
 
-        // total_price é subtotal + taxa (se entrega)
         double total = subtotal + taxaEntrega;
 
         try {
             Integer idUser = Session.getLoggedUser().getIdUser();
-            if (idUser == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Sessão inválida: usuário sem id_user.",
-                        "Erro",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
 
-            Integer idOrder = repoOrder.createOrderAndReturnId(
+            Integer idOrder = controllerCheckout.confirmOrder(
                     idUser,
-                    Timestamp.from(Instant.now()),
                     total,
                     delivery,
-                    obs
+                    obs,
+                    CartSession.getItems()
             );
 
-            if (idOrder == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Não foi possível criar o pedido.",
-                        "Erro",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Insere itens
-            for (Map.Entry<Integer, Integer> entry : CartSession.getItems().entrySet()) {
-                Integer productId = entry.getKey();
-                Integer qty = entry.getValue();
-
-                Product p = repoProduct.findByIdProduct(productId);
-                if (p == null) continue;
-
-                double unit = computeUnitPrice(p);
-
-                boolean okItem = repoOrderItems.createOrderItem(idOrder, productId, qty, unit);
-                if (!okItem) {
-                    JOptionPane.showMessageDialog(this,
-                            "Não foi possível salvar um item do pedido.",
-                            "Erro",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            }
-
             CartSession.clear();
-            JOptionPane.showMessageDialog(this, "Pedido confirmado com sucesso!");
+            JOptionPane.showMessageDialog(this, "Pedido confirmado com sucesso! (Pedido #" + idOrder + ")");
             dispose();
 
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this,
-                    "Erro ao confirmar pedido: " + e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
+        } catch (ValidationException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Atenção", JOptionPane.WARNING_MESSAGE);
+        } catch (DataAccessException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        } catch (AppException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
