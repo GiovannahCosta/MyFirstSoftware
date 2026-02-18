@@ -169,28 +169,28 @@ public class CreateTables {
 	
 	
 	public static void createTableProduct() {
-		String createTableProduct = "CREATE TABLE IF NOT EXISTS"
-				+ " product (id SERIAL PRIMARY KEY,"
-				+ "name VARCHAR(20) NOT NULL,"
-				+ "id_flavor INTEGER NOT NULL,"
-				+ "id_size INTEGER NOT NULL,"
-				+ "description TEXT,"
-				+ "CONSTRAINT fk_flavor FOREIGN KEY (id_flavor) REFERENCES flavor(id),"
-				+ "CONSTRAINT fk_size FOREIGN KEY (id_size) REFERENCES \"size\"(id)"
-				+ ");";
-		
-		try(Connection conn = DBConnection.getConnection()){
-			try {
-				Statement stmt = conn.createStatement();
-				stmt.execute(createTableProduct);
-			} catch(SQLException e) {
-				e.printStackTrace();
-			}
-			
-			System.out.println("Create product successful");
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
+	    String createTableProduct = "CREATE TABLE IF NOT EXISTS"
+	            + " product (id SERIAL PRIMARY KEY,"
+	            + "name TEXT NOT NULL,"
+	            + "id_flavor INTEGER NOT NULL,"
+	            + "id_size INTEGER NOT NULL,"
+	            + "base_price DECIMAL(10, 2) NOT NULL,"
+	            + "description TEXT,"
+	            + "CONSTRAINT fk_flavor FOREIGN KEY (id_flavor) REFERENCES flavor(id) ON DELETE RESTRICT,"
+	            + "CONSTRAINT fk_size FOREIGN KEY (id_size) REFERENCES size(id) ON DELETE RESTRICT"
+	            + ");";
+
+	    try(Connection conn = DBConnection.getConnection()) {
+	        try {
+	            Statement stmt = conn.createStatement();
+	            stmt.execute(createTableProduct);
+	        } catch(SQLException e) {
+	            e.printStackTrace();
+	        }
+	        System.out.println("Create product successful");
+	    } catch(SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 	
 	
@@ -238,28 +238,26 @@ public class CreateTables {
 	}
 
 	public static void createTableFlavor(){
-		String createTableFlavor = "CREATE TABLE IF NOT EXISTS"
-			+ " flavor (id SERIAL PRIMARY KEY,"
-			+ "name TEXT NOT NULL,"
-			+ "id_flavor_level INTEGER NOT NULL,"
-			+ "price DECIMAL(10, 2) NOT NULL,"
-			+ "description TEXT,"
-			+ "CONSTRAINT fk_flavor_level FOREIGN KEY (id_flavor_level) REFERENCES flavor_level(id)"
-			+ ");";
+	    String createTableFlavor = "CREATE TABLE IF NOT EXISTS"
+	            + " flavor (id SERIAL PRIMARY KEY,"
+	            + "name TEXT NOT NULL,"
+	            + "id_flavor_level INTEGER NOT NULL,"
+	            + "description TEXT,"
+	            + "CONSTRAINT fk_flavor_level FOREIGN KEY (id_flavor_level) REFERENCES flavor_level(id)"
+	            + ");";
 
-			try(Connection conn = DBConnection.getConnection()){
-			try {
-				Statement stmt = conn.createStatement();
-				stmt.execute(createTableFlavor);
-			} catch(SQLException e) {
-				e.printStackTrace();
-			}
-			
-			System.out.println("Create flavor successful");
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
+	    try(Connection conn = DBConnection.getConnection()){
+	        try {
+	            Statement stmt = conn.createStatement();
+	            stmt.execute(createTableFlavor);
+	        } catch(SQLException e) {
+	            e.printStackTrace();
+	        }
 
+	        System.out.println("Create flavor successful");
+	    } catch(SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	/**

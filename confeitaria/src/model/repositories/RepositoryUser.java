@@ -24,7 +24,7 @@ public class RepositoryUser {
 	 * Exige que a person já exista (id_person = person.id).
 	 */
 	private static final String SQL_INSERT =
-			"INSERT INTO \"user\" (id, password) VALUES (?, ?)";
+            "INSERT INTO \"user\" (id_person, password_hash) VALUES (?, ?)";
 	
 	/**
 	 * SELECT por id com JOIN em person (first_name, last_name, email).
@@ -66,7 +66,7 @@ public class RepositoryUser {
 		try (Connection conn = DBConnection.getConnection();
 				PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
 			stmt.setInt(1, user.getId());
-			stmt.setString(2, user.getPasswordHash());
+            stmt.setString(2, user.getPasswordHash());
 			int rowsAffected = stmt.executeUpdate();
 			return rowsAffected > 0;
 		}
