@@ -8,7 +8,7 @@ import java.util.Map;
 
 public final class CartSession {
 
-    // productId -> quantity
+    
     private static final Map<Integer, Integer> items = new LinkedHashMap<>();
 
     private CartSession() {}

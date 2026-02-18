@@ -9,10 +9,8 @@ import java.util.Properties;
 
 public final class DBConnection {
 
-    // Você disse que seu arquivo está aqui:
 	private static final String PROPS_PATH = "src/db.properties";
 
-    // defaults só para host/port (opcional)
     private static final String DEFAULT_HOST = "localhost";
     private static final String DEFAULT_PORT = "5432";
 
@@ -31,15 +29,12 @@ public final class DBConnection {
     }
 
     private static DbConfig loadConfigOrThrow() throws SQLException {
-        // 1) tenta ENV
         DbConfig envCfg = loadFromEnv();
         if (envCfg != null) return envCfg;
 
-        // 2) tenta arquivo
         DbConfig fileCfg = loadFromPropertiesFile();
         if (fileCfg != null) return fileCfg;
 
-        // 3) nada encontrado -> falha clara
         throw new SQLException(
                 "Banco não configurado.\n"
                         + "- Crie o arquivo: " + PROPS_PATH + "\n"
@@ -56,9 +51,8 @@ public final class DBConnection {
         String user = envOrNull("DB_USER");
         String pass = envOrNull("DB_PASSWORD");
 
-        // Só considera ENV se DB_NAME/DB_USER/DB_PASSWORD existirem
         if (db == null && user == null && pass == null && host == null && port == null) {
-            return null; // nada definido
+            return null; 
         }
 
         host = host != null ? host : DEFAULT_HOST;
@@ -86,7 +80,7 @@ public final class DBConnection {
             return new DbConfig(host, port, db, user, pass);
 
         } catch (java.io.FileNotFoundException e) {
-            return null; // arquivo não existe
+            return null;
         } catch (Exception e) {
             throw new SQLException("Erro ao ler configurações do banco em " + PROPS_PATH + ": " + e.getMessage(), e);
         }

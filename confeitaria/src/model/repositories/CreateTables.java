@@ -260,9 +260,7 @@ public class CreateTables {
 	    }
 	}
 
-	/**
-	 * Tabela size (tamanhos). Nome entre aspas pois "size" é palavra reservada em SQL.
-	 */
+	
 	public static void createTableSize() {
 		String sql = "CREATE TABLE IF NOT EXISTS \"size\" ("
 				+ "id SERIAL PRIMARY KEY,"

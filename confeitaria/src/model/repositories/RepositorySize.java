@@ -29,7 +29,8 @@ public class RepositorySize {
             "SELECT id AS size_id, name AS size_name, yield AS size_yield, weight AS size_weight, price AS size_price "
                     + "FROM \"size\" ORDER BY id";
 
-    public boolean createFlavorLevel(Size size) throws SQLException {
+    
+    public boolean createSize(Size size) throws SQLException {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
 
@@ -41,7 +42,7 @@ public class RepositorySize {
         }
     }
 
-    public boolean deleteFlavorLevel(Size size) throws SQLException {
+    public boolean deleteSize(Size size) throws SQLException {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
 
@@ -49,6 +50,7 @@ public class RepositorySize {
             return stmt.executeUpdate() > 0;
         }
     }
+
 
     public Size findByIdSize(Integer id) throws SQLException {
         try (Connection conn = DBConnection.getConnection();

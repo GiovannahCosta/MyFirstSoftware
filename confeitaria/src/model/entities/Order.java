@@ -87,7 +87,7 @@ public class Order {
 		return this.orderItems;
 	}
 	
-	// esses métodos (setOrderItems, addItem, removeAllSameItems e removeOneItem) foram feitos com IA
+
 	public void setOrderItems(List<OrderItems> orderItems) {
         if (orderItems == null) {
             this.orderItems = new ArrayList<>();

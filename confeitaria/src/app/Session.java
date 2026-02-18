@@ -2,10 +2,6 @@ package app;
 
 import model.entities.User;
 
-/**
- * Sessão simples para manter o usuário logado.
- * Mantém baixo acoplamento: qualquer tela pode consultar Session.getLoggedUser().
- */
 public final class Session {
     private static User loggedUser;
 
