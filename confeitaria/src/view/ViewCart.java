@@ -1,24 +1,25 @@
 package view;
 
 import app.CartSession;
-import controller.ControllerCartView;
-import exceptions.DataAccessException;
+import model.entities.Product;
+import model.repositories.RepositoryProduct;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ViewCart extends JFrame {
 
-    private final ControllerCartView controller = new ControllerCartView();
+    private final RepositoryProduct repoProduct = new RepositoryProduct();
 
     private JTable table;
     private DefaultTableModel model;
     private JLabel labelSubtotal;
 
-    // guardamos os ids na ordem das linhas para remover corretamente
     private final List<Integer> productIds = new ArrayList<>();
 
     public ViewCart() {
@@ -62,10 +63,10 @@ public class ViewCart extends JFrame {
 
         JButton btnRemove = ViewTheme.createSecondaryButton("Remover item");
         btnRemove.addActionListener(e -> onRemoveSelected());
-
+        
         JButton btnCheckout = ViewTheme.createPrimaryButton("Finalizar compra");
         btnCheckout.addActionListener(e -> {
-            if (CartSession.isEmpty()) {
+            if (app.CartSession.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Carrinho vazio.", "Checkout", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
@@ -102,29 +103,38 @@ public class ViewCart extends JFrame {
             return;
         }
 
-        try {
-            ControllerCartView.CartViewData data = controller.loadCartData();
+        double subtotal = 0.0;
 
-            for (ControllerCartView.CartRow row : data.getRows()) {
-                productIds.add(row.getProductId());
+        for (Map.Entry<Integer, Integer> entry : CartSession.getItems().entrySet()) {
+            Integer productId = entry.getKey();
+            Integer qty = entry.getValue();
 
+            try {
+                Product p = repoProduct.findByIdProduct(productId);
+                if (p == null) continue;
+
+                double unit = computeUnitPrice(p);
+                double total = unit * qty;
+                subtotal += total;
+
+                productIds.add(productId);
                 model.addRow(new Object[]{
-                        row.getProductName(),
-                        row.getQty(),
-                        String.format("R$ %.2f", row.getUnit()),
-                        String.format("R$ %.2f", row.getTotal())
+                        p.getName(),
+                        qty,
+                        String.format("R$ %.2f", unit),
+                        String.format("R$ %.2f", total)
                 });
+
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this,
+                        "Erro ao carregar produto do carrinho: " + e.getMessage(),
+                        "Erro",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
             }
-
-            double subtotal = data.getSubtotal() != null ? data.getSubtotal() : 0.0;
-            labelSubtotal.setText(String.format("Subtotal: R$ %.2f", subtotal));
-
-        } catch (DataAccessException e) {
-            JOptionPane.showMessageDialog(this,
-                    e.getMessage(),
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE);
         }
+
+        labelSubtotal.setText(String.format("Subtotal: R$ %.2f", subtotal));
     }
 
     private void onRemoveSelected() {
@@ -138,7 +148,7 @@ public class ViewCart extends JFrame {
         }
 
         Integer productId = productIds.get(row);
-        controller.removeByProductId(productId);
+        CartSession.remove(productId);
         refresh();
     }
 
@@ -150,5 +160,15 @@ public class ViewCart extends JFrame {
                 BorderFactory.createEmptyBorder(16, 16, 16, 16)));
         card.add(content, BorderLayout.CENTER);
         return card;
+    }
+
+    private static double computeUnitPrice(Product p) {
+        double base = p.getBasePrice() != null ? p.getBasePrice() : 0.0;
+
+        double sizePrice = (p.getSize() != null && p.getSize().getPrice() != null) ? p.getSize().getPrice() : 0.0;
+        double levelPrice = (p.getFlavor() != null && p.getFlavor().getLevel() != null && p.getFlavor().getLevel().getPrice() != null)
+                ? p.getFlavor().getLevel().getPrice() : 0.0;
+
+        return base + sizePrice + levelPrice;
     }
 }

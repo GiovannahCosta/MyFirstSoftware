@@ -3,13 +3,17 @@
 Aplicação desktop em Java (Swing) para gerenciar e comprar produtos de confeitaria.  
 O sistema possui fluxo de **Admin (cadastro de produtos)** e fluxo de **Cliente (loja, carrinho, checkout, pedidos)**, persistindo dados em **PostgreSQL** via **JDBC**.
 
+> **Observação de performance (primeira abertura)**  
+> Ao executar, a **ViewHome pode demorar um pouco para abrir**, porque antes dela o sistema cria tabelas e executa o **seed**, incluindo a leitura do arquivo **CSV de áreas/bairros**.  
+> Isso é proposital para garantir que **todos os bairros já existam no cadastro** assim que a tela de cadastro for aberta.
+
 ---
 
 ## Sumário
 
 1. [Visão Geral](#visão-geral)  
 2. [Tecnologias](#tecnologias)  
-3. [Arquitetura e Padrões](#arquitetura-e-padrões)  
+3. [Arquitetura (MVC)](#arquitetura-mvc)  
 4. [Como Executar](#como-executar)  
    4.1 [Dependência do driver PostgreSQL (JAR manual)](#dependência-do-driver-postgresql-jar-manual)  
    4.2 [Configuração do banco (obrigatória)](#configuração-do-banco-obrigatória)  
@@ -23,7 +27,8 @@ O sistema possui fluxo de **Admin (cadastro de produtos)** e fluxo de **Cliente 
    6.5 [Carrinho](#carrinho)  
    6.6 [Checkout (Entrega/Retirada + Taxa por Área)](#checkout-entregaretirada--taxa-por-área)  
    6.7 [Meus Pedidos](#meus-pedidos)    
-7. [Melhorias Futuras](#melhorias-futuras)  
+7. [Seed de Áreas via CSV (Bairros)](#seed-de-áreas-via-csv-bairros)  
+8. [Melhorias Futuras](#melhorias-futuras)
 
 ---
 
@@ -42,7 +47,8 @@ O sistema possui fluxo de **Admin (cadastro de produtos)** e fluxo de **Cliente 
   - listar produtos
   - excluir produtos
 
-O controle de acesso ao cadastro de produtos usa whitelist de e-mails no arquivo [`EmailWhitelist.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/auth/EmailWhitelist.java#L1-L20).
+O controle de acesso ao cadastro de produtos usa whitelist de e-mails no arquivo:
+- [`EmailWhitelist.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/auth/EmailWhitelist.java)
 
 ---
 
@@ -52,37 +58,24 @@ O controle de acesso ao cadastro de produtos usa whitelist de e-mails no arquivo
 - **Swing** (UI)
 - **PostgreSQL** (banco relacional)
 - **JDBC** (acesso a dados)
-- **Hash de senha** com PBKDF2 em [`EncryptionService.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/services/EncryptionService.java)
+- **Hash de senha** com PBKDF2 em:
+  - [`EncryptionService.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/services/EncryptionService.java)
 
 ---
 
-## Arquitetura e Padrões
+## Arquitetura (MVC)
 
-A aplicação organiza o código em camadas/pacotes:
+O projeto segue o padrão **MVC**:
 
-- `view`: telas Swing (UI)
-- `model.entities`: entidades (representação dos dados em objetos)
-- `model.repositories`: acesso a dados e SQL (padrão **Repository**)
-- `app`: utilitários de aplicação (sessão, carrinho, main)
-- `services`: serviços transversais (seed inicial, criptografia)
+- **View (`view/`)**: telas Swing e interação com usuário  
+- **Controller (`controller/`)**: coordena ações, valida regras e orquestra operações  
+- **Model (`model/`)**:
+  - `model.entities`: entidades
+  - `model.repositories`: acesso a dados via JDBC/SQL
 
-### Padrão Repository (Acesso a dados)
-Repositórios encapsulam SQL e operações JDBC.
-Ex.: `RepositoryProduct` centraliza `INSERT/DELETE/SELECT` de produto e faz JOIN para retornar objetos completos:
-- [`RepositoryProduct.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/RepositoryProduct.java)
-
-### Sessão
-A sessão do usuário logado é mantida em memória (variável `static`) em:
-- [`Session.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/app/Session.java)
-
-Isso permite que qualquer tela valide login com `Session.isLoggedIn()` e recupere dados com `Session.getLoggedUser()`.
-
-### Carrinho
-O carrinho também é mantido em memória:
-- [`CartSession.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/app/CartSession.java)
-
-Estrutura: `Map<Integer, Integer>` (productId → quantidade).  
-Justificativa: facilita somar quantidades do mesmo produto e consultar rapidamente o que está no carrinho.
+Outros pacotes relevantes:
+- `app/`: sessão (`Session`) e carrinho (`CartSession`)
+- `services/`: seed inicial e serviços auxiliares
 
 ---
 
@@ -101,10 +94,13 @@ Como o projeto usa dependências via JAR manual, é necessário adicionar o driv
 
 ### Configuração do banco (obrigatória)
 
-O sistema foi configurado para **falhar com mensagem clara** se não existir configuração.  
-A classe [`DBConnection.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/DBConnection.java) lê primeiro variáveis de ambiente e, se não existirem, lê arquivo.
+A classe:
+- [`DBConnection.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/model/repositories/DBConnection.java)
+
+lê primeiro variáveis de ambiente e, se não existirem, lê arquivo.
 
 #### 1) Arquivo `db.properties`
+
 O arquivo deve existir em:
 
 - `confeitaria/src/db.properties`
@@ -123,6 +119,7 @@ DB_PASSWORD=confeitaria
 ```
 
 #### 2) Variáveis de ambiente
+
 Alternativamente, configure:
 
 - `DB_HOST`
@@ -153,23 +150,22 @@ GRANT ALL ON SCHEMA public TO confeitaria_user;
 
 ## Modelo de Dados (Tabelas)
 
-As tabelas são criadas automaticamente em runtime por [`CreateTables.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/CreateTables.java).
+As tabelas são criadas automaticamente em runtime por:
+- [`CreateTables.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/model/repositories/CreateTables.java)
 
 ### Ordem de criação
+
 O método `createAllTables()` cria as tabelas em ordem respeitando chaves estrangeiras:
 
-> area → address → person → flavor_level → flavor → size → user → product → order → order_items  
-(ver comentário no início do método: [`CreateTables.java#L9-L24`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/CreateTables.java#L9-L24))
+> area → address → person → flavor_level → flavor → size → user → product → order → order_items
 
 ### Tabelas principais do fluxo de venda
 
 - `"order"`: pedido (cabeçalho)
   - `id_user`, `datetime`, `total_price`, `delivery`, `observations`
-  - criada em: [`CreateTables.java#L143-L168`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/CreateTables.java#L143-L168)
 
 - `order_items`: itens do pedido
   - `id_order`, `id_product`, `quantity`, `price_at_moment`
-  - criada em: [`CreateTables.java#L197-L222`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/CreateTables.java#L197-L222)
 
 > Por que `price_at_moment`?  
 > Para registrar o preço no momento da compra, evitando que mudanças futuras de preço alterem pedidos antigos.
@@ -183,24 +179,29 @@ O método `createAllTables()` cria as tabelas em ordem respeitando chaves estran
 A classe `Main` faz:
 1. imprime working dir (debug)
 2. cria as tabelas
-3. injeta seeds (áreas, níveis e tamanhos)
+3. executa seed (áreas, níveis e tamanhos)
 4. abre a `ViewHome`
 
-Arquivo: [`Main.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/app/Main.java)
+Arquivo:
+- [`Main.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/app/Main.java)
 
-O seed inicial é feito em [`SeedService.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/services/SeedService.java).
+Seed:
+- [`SeedService.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/services/SeedService.java)
+
+> Observação: por causa do seed de áreas via CSV, a primeira abertura pode demorar um pouco.
 
 ---
 
 ### Home e Controle de Acesso
 
-Tela: [`ViewHome.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewHome.java)
+Tela:
+- [`ViewHome.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewHome.java)
 
-- Botões:
-  - Cadastrar
-  - Entrar
-  - Cadastro de Produtos (Admin)
-  - Comprar produtos
+Botões:
+- Cadastrar
+- Entrar
+- Cadastro de Produtos (Admin)
+- Comprar produtos
 
 Regras:
 - **Comprar produtos** exige login (`Session.isLoggedIn()`).
@@ -210,45 +211,41 @@ Regras:
 
 ### Admin: Cadastro de Produtos
 
-Tela: [`ViewProducts.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewProducts.java)
+Tela:
+- [`ViewProducts.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewProducts.java)
 
 Funcionalidades:
 - formulário para criar produto
 - tabela para listar produtos
 - exclusão de produto
 
-Decisão importante (documentável):
-- Ao salvar um produto, a tela **sempre cria um novo sabor** (`Flavor`) com o nível selecionado e então cria o `Product` apontando para esse `Flavor` e para o `Size` escolhido (ver comentário “Opção A” em [`ViewProducts.java#L19-L24`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewProducts.java#L19-L24)).
-
 ---
 
 ### Cliente: Loja e Detalhe do Produto
 
 #### Loja (listagem)
-Tela: [`ViewShopProducts.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewShopProducts.java)
+Tela:
+- [`ViewShopProducts.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewShopProducts.java)
 
-- carrega produtos via `RepositoryProduct.findAllProduct()`
-- mostra na tabela:
-  - Produto, Sabor, Nível, Tamanho, Preço base
-- ações:
-  - Atualizar
-  - Ver/Adicionar (abre detalhes)
-  - Carrinho
-  - Meus pedidos
+Ações:
+- Atualizar
+- Ver/Adicionar (abre detalhes)
+- Carrinho
+- Meus pedidos
 
 #### Detalhe + quantidade
-Tela: [`ViewProductDetails.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewProductDetails.java)
+Tela:
+- [`ViewProductDetails.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewProductDetails.java)
 
-- calcula preço unitário como:
-  - `base_price + size.price + flavor_level.price`  
-  (ver `computeUnitPrice`: [`ViewProductDetails.java#L97-L114`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewProductDetails.java#L97-L114))
-- adiciona ao carrinho: `CartSession.add(product, qty)`
+Regra de cálculo (preço unitário):
+- `base_price + size.price + flavor_level.price`
 
 ---
 
 ### Carrinho
 
-Tela: [`ViewCart.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewCart.java)
+Tela:
+- [`ViewCart.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewCart.java)
 
 Responsabilidades:
 - listar itens do carrinho (nome, qtd, unitário, total)
@@ -256,14 +253,12 @@ Responsabilidades:
 - remover item selecionado
 - iniciar checkout
 
-Decisão técnica:
-- A tela recarrega o `Product` do banco via `RepositoryProduct.findByIdProduct(productId)` para garantir dados completos do produto (incluindo size e flavor_level para cálculo do unitário).
-
 ---
 
 ### Checkout (Entrega/Retirada + Taxa por Área)
 
-Tela: [`ViewCheckout.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewCheckout.java)
+Tela:
+- [`ViewCheckout.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewCheckout.java)
 
 Regras:
 - exige login
@@ -274,30 +269,42 @@ Regras:
 A taxa é obtida do endereço do usuário:
 - busca a pessoa pelo email do usuário logado (`RepositoryPerson.findByEmailPerson`)
 - extrai `person.address.area.fee`
-(ver método `computeDeliveryFeeFromUserArea`: [`ViewCheckout.java#L213-L228`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewCheckout.java#L213-L228)).
 
 #### Persistência do pedido
-- cria pedido e obtém id com `RepositoryOrder.createOrderAndReturnId`:
-  - [`RepositoryOrder.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/RepositoryOrder.java)
-- cria itens com `RepositoryOrderItems.createOrderItem`:
-  - [`RepositoryOrderItems.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/RepositoryOrderItems.java)
+- cria pedido e obtém id com `RepositoryOrder.createOrderAndReturnId`
+- cria itens com `RepositoryOrderItems.createOrderItem`
 
 ---
 
 ### Meus Pedidos
 
-Tela: [`ViewMyOrders.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/view/ViewMyOrders.java)
+Tela:
+- [`ViewMyOrders.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/view/ViewMyOrders.java)
 
 - tabela 1: lista pedidos do usuário logado
 - tabela 2: lista itens do pedido selecionado
 
-Repositório de consulta:
-- [`RepositoryMyOrders.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/798366cdbbe6787a31b6db7859f11641ef19657e/confeitaria/src/model/repositories/RepositoryMyOrders.java)
-
-Modelos auxiliares (DTO/Resumo):
+Modelos auxiliares:
 - [`OrderSummary.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/model/entities/OrderSummary.java)
 - [`OrderItemSummary.java`](https://github.com/GiovannahCosta/MyFirstSoftware/blob/main/confeitaria/src/model/entities/OrderItemSummary.java)
 
+---
+
+## Seed de Áreas via CSV (Bairros)
+
+Objetivo:
+- garantir que todos os bairros/áreas estejam disponíveis no cadastro desde o início.
+
+Como funciona:
+- antes de abrir a `ViewHome`, o sistema executa o seed que **lê um arquivo CSV** com as áreas e insere no banco.
+
+Onde configurar:
+- arquivo CSV (ex.: `areas.csv`) deve existir conforme configurado no `SeedService`.
+
+Dica:
+- se você mudar o CSV, os novos bairros passam a aparecer nas próximas execuções (dependendo da estratégia de seed adotada).
+
+---
 
 ## Melhorias Futuras
 
