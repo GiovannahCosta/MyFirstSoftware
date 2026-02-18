@@ -1,1 +1,25 @@
-/.metadata/
+# --- Java ---
+*.class
+*.log
+*.jar
+target/
+build/
+bin/
+out/
+
+# --- Eclipse ---
+.project
+.classpath
+.settings/
+.metadata/
+
+# --- IntelliJ / VSCode  ---
+.idea/
+.vscode/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- DB local  ---
+confeitaria/src/db.properties
