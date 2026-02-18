@@ -22,13 +22,8 @@ O sistema possui fluxo de **Admin (cadastro de produtos)** e fluxo de **Cliente 
    6.4 [Cliente: Loja e Detalhe do Produto](#cliente-loja-e-detalhe-do-produto)  
    6.5 [Carrinho](#carrinho)  
    6.6 [Checkout (Entrega/Retirada + Taxa por Área)](#checkout-entregaretirada--taxa-por-área)  
-   6.7 [Meus Pedidos](#meus-pedidos)  
-7. [Documentação UML (Astah)](#documentação-uml-astah)  
-   7.1 [Casos de Uso](#71-diagrama-de-casos-de-uso)  
-   7.2 [Diagrama de Classes](#72-diagrama-de-classes)  
-   7.3 [Diagramas de Sequência](#73-diagramas-de-sequência)  
-8. [Checklist de Prints (Evidências)](#checklist-de-prints-evidências)  
-9. [Melhorias Futuras](#melhorias-futuras)  
+   6.7 [Meus Pedidos](#meus-pedidos)    
+7. [Melhorias Futuras](#melhorias-futuras)  
 
 ---
 
