@@ -10,28 +10,30 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Controller responsável pela view de "Meus Pedidos"
- * Este controller centraliza a lógica de validação de ids e a consulta de pedidos e itens no banco de dados via {@link RepositoryMyOrders}.
- * Responsável por validar ids informados pela View, carregar lista de pedidos do usuário, carregar lista de itens de um pedido, converter {@link SQLException} em {@link DataAccessException}
+ * Controller responsável pela View de "Meus Pedidos".
+ * Centraliza a validação de ids informados pela View e a consulta de pedidos e itens no banco de dados via {@link RepositoryMyOrders}.
+ * Converte {@link SQLException} em {@link DataAccessException} para padronizar o erro para as camadas superiores.
  */
-
 public class ControllerMyOrders {
-	
+
 	/**
-     * Repositório especializado para consultas de pedidos e itens (JOINs/consultas de relatório).
+     * Repositório especializado para consultas de pedidos e itens.
+     * É responsável por executar consultas de relatório e joins, retornando resumos de pedidos e itens.
      */
     private final RepositoryMyOrders repo;
-    
+
     /**
      * Construtor padrão.
-     * Instancia o repositório concreto.
+     * Instancia o repositório concreto RepositoryMyOrders.
      */
     public ControllerMyOrders() {
         this.repo = new RepositoryMyOrders();
     }
-    
+
     /**
      * Construtor com injeção de dependência.
+     * Permite fornecer um repositório já configurado (por exemplo, para testes).
+     *
      * @param repo repositório a ser utilizado (não deve ser null)
      */
     public ControllerMyOrders(RepositoryMyOrders repo) {
@@ -39,13 +41,16 @@ public class ControllerMyOrders {
     }
 
     /**
-     * Lista os pedidos do usuário logado
-     * Valida {@code idUser}
-     * Chama {@link RepositoryMyOrders#findOrdersByUser(Integer)}
-     * Converte {@link SQLException} em {@link DataAccessException}
+     * Lista os pedidos de um usuário.
+     *
+     * Funcionamento:
+     * 1. Valida o idUser.
+     * 2. Chama {@link RepositoryMyOrders#findOrdersByUser(Integer)} para carregar os pedidos.
+     * 3. Converte {@link SQLException} em {@link DataAccessException}.
+     *
      * @param idUser id do usuário logado
      * @return lista de pedidos (pode ser vazia)
-     * @throws ValidationException se {@code idUser} for inválido
+     * @throws ValidationException se idUser for inválido
      * @throws DataAccessException se ocorrer falha no acesso ao banco
      */
     public List<OrderSummary> listOrdersByUser(Integer idUser) throws ValidationException, DataAccessException {
@@ -58,15 +63,18 @@ public class ControllerMyOrders {
             throw new DataAccessException("Erro ao carregar pedidos.", e);
         }
     }
-    
+
     /**
-     * Lista de itens de um pedido específico.
-     * Valida {@code idOrder}
-     * Chama {@link RepositoryMyOrders.findItemsByOrder(Integer)}.
-     * Converte {@link SQLException} em {@link DataAccessException}.
+     * Lista os itens de um pedido específico.
+     *
+     * Funcionamento:
+     * 1. Valida o idOrder.
+     * 2. Chama {@link RepositoryMyOrders#findItemsByOrder(Integer)} para carregar os itens do pedido.
+     * 3. Converte {@link SQLException} em {@link DataAccessException}.
+     *
      * @param idOrder id do pedido selecionado
      * @return lista de itens (pode ser vazia)
-     * @throws ValidationException se {@code idOrder} for inválido
+     * @throws ValidationException se idOrder for inválido
      * @throws DataAccessException se ocorrer falha no acesso ao banco
      */
     public List<OrderItemSummary> listItems(Integer idOrder) throws ValidationException, DataAccessException {

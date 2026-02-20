@@ -17,44 +17,40 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Controller responsável pela view Cadastro de Produtos.
- * Centraliza as operações administrativas relacionadas ao catálogo
- * lista níveis de sabor (FlavorLevel)
- * lista tamanhos (Size)
- * lista produtos
- * criar produto criando um sabor novo associado ao nível selecionado
- * exclui produto
- * Este controller é chamado por {@code ViewProducts} (tela admin), ajudando a evitar SQL na UI.
+ * Controller responsável pela View de cadastro de produtos (Admin).
+ * Centraliza as operações administrativas relacionadas ao catálogo:
+ * listar níveis de sabor, listar tamanhos, listar produtos, criar produto com novo sabor e excluir produto.
+ * Este controller é chamado pela ViewProducts, evitando que a UI faça consultas SQL diretamente.
  */
 public class ControllerProductAdmin {
-	
+
 	/**
      * Repositório de produtos.
-     * Usado para listar, inserir e excluir {@link Product}.
+     * Usado para listar, inserir e excluir Product.
      */
     private final RepositoryProduct repoProduct;
-    
+
     /**
      * Repositório de sabores.
-     * Usado para inserir {@link Flavor} antes de inserir um {@link Product}.
+     * Usado para inserir Flavor antes de inserir um Product.
      */
     private final RepositoryFlavor repoFlavor;
-    
+
     /**
-     * Repositório de níveis de sabor (FlavorLevel).
-     * Usado para carregar o combo de níveis na tela de admin.
+     * Repositório de níveis de sabor.
+     * Usado para carregar os níveis no combo da tela admin.
      */
     private final RepositoryFlavorLevel repoLevel;
-    
+
     /**
-     * Repositório de tamanhos (Size).
-     * Usado para carregar o combo de tamanhos na tela de admin.
+     * Repositório de tamanhos.
+     * Usado para carregar os tamanhos no combo da tela admin.
      */
     private final RepositorySize repoSize;
-    
+
     /**
      * Construtor padrão.
-     * Instancia os repositórios concretos.
+     * Instancia os repositórios concretos usados pelo controller.
      */
     public ControllerProductAdmin() {
         this.repoProduct = new RepositoryProduct();
@@ -62,10 +58,14 @@ public class ControllerProductAdmin {
         this.repoLevel = new RepositoryFlavorLevel();
         this.repoSize = new RepositorySize();
     }
-    
+
     /**
      * Lista os níveis de sabor disponíveis.
-     * Converte {@link SQLException} em {@link DataAccessException}
+     *
+     * Funcionamento:
+     * 1. Consulta o banco via repoLevel.
+     * 2. Converte SQLException em DataAccessException.
+     *
      * @return lista de níveis (pode ser vazia)
      * @throws DataAccessException se houver falha ao acessar o banco
      */
@@ -76,12 +76,14 @@ public class ControllerProductAdmin {
             throw new DataAccessException("Erro ao carregar níveis de sabor.", e);
         }
     }
-    
-    
+
     /**
      * Lista os tamanhos disponíveis.
-     * Chama {@link RepositorySize#findAllSize()}
-     * Converte {@link SQLException} em {@link DataAccessException}
+     *
+     * Funcionamento:
+     * 1. Chama {@link RepositorySize#findAllSize()}.
+     * 2. Converte SQLException em DataAccessException.
+     *
      * @return lista de tamanhos (pode ser vazia)
      * @throws DataAccessException se houver falha ao acessar o banco
      */
@@ -92,10 +94,14 @@ public class ControllerProductAdmin {
             throw new DataAccessException("Erro ao carregar tamanhos.", e);
         }
     }
-    
-    
+
     /**
-     * Lista todos os produtos cadastrados
+     * Lista todos os produtos cadastrados.
+     *
+     * Funcionamento:
+     * 1. Busca no repositório de produtos.
+     * 2. Converte SQLException em DataAccessException.
+     *
      * @return lista de produtos
      * @throws DataAccessException se houver falha ao acessar o banco
      */
@@ -106,19 +112,22 @@ public class ControllerProductAdmin {
             throw new DataAccessException("Erro ao listar produtos.", e);
         }
     }
-    
+
     /**
-     * Cria um produto e, junto, cria um novo sabor ({@link Flavor}) associado ao nível selecionado.
-     * Valida campos mínimos (ex.: {@code basePrice} obrigatório)
-     * Cria {@link Flavor} via {@link FlavorFactory}
-     * Persiste o sabor via {@link RepositoryFlavor#createFlavorAndReturnId(Flavor)}
-     * Cria {@link Product} via {@link ProductFactory} usando o sabor recém-criado
-     * Persiste o produto via {@link RepositoryProduct#createProduct(Product)}.
+     * Cria um produto e, junto, cria um novo sabor associado ao nível selecionado.
+     *
+     * Funcionamento:
+     * 1. Valida o preço base.
+     * 2. Cria um novo Flavor via {@link FlavorFactory}.
+     * 3. Persiste o sabor via {@link RepositoryFlavor#createFlavorAndReturnId(Flavor)} e obtém o id gerado.
+     * 4. Cria um Product via {@link ProductFactory} usando o Flavor recém-criado.
+     * 5. Persiste o produto via {@link RepositoryProduct#createProduct(Product)}.
+     * 6. Converte SQLException em DataAccessException.
      *
      * @param productName nome do produto
      * @param basePrice preço base (obrigatório)
      * @param flavorName nome do sabor a criar
-     * @param level nível do sabor selecionado (usado para o sabor)
+     * @param level nível do sabor selecionado
      * @param size tamanho selecionado
      * @param description descrição opcional
      * @throws ValidationException se dados obrigatórios estiverem inválidos
@@ -135,7 +144,6 @@ public class ControllerProductAdmin {
         try {
             if (basePrice == null) throw new ValidationException("Preço base é obrigatório.");
 
-            
             Flavor newFlavor = FlavorFactory.create(null, flavorName, level, null);
             Integer newFlavorId = repoFlavor.createFlavorAndReturnId(newFlavor);
             if (newFlavorId == null) {
@@ -143,7 +151,6 @@ public class ControllerProductAdmin {
             }
             newFlavor.setId(newFlavorId);
 
-            
             Product product = ProductFactory.create(null, productName, newFlavor, size, basePrice, description);
             boolean ok = repoProduct.createProduct(product);
             if (!ok) {
@@ -154,12 +161,16 @@ public class ControllerProductAdmin {
             throw new DataAccessException("Erro ao salvar produto no banco.", e);
         }
     }
-    
+
     /**
      * Exclui um produto.
-     * Valida se o produto e o id existem
-     * Chama {@link RepositoryProduct.deleteProduct(Product)}
-     * Se o repositório retornar false, lança {@link DataAccessException}.
+     *
+     * Funcionamento:
+     * 1. Valida se product e product.getId() existem.
+     * 2. Chama {@link RepositoryProduct#deleteProduct(Product)}.
+     * 3. Se o repositório retornar false, lança DataAccessException.
+     * 4. Converte SQLException em DataAccessException.
+     *
      * @param product produto selecionado na tabela da tela admin
      * @throws ValidationException se produto/id forem inválidos
      * @throws DataAccessException se ocorrer falha ao excluir no banco

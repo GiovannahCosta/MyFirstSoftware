@@ -12,7 +12,7 @@ import javax.crypto.spec.PBEKeySpec;
 /**
  * Serviço responsável por hashing e verificação de senha.
  * Implementa hashing usando PBKDF2 (Password-Based Key Derivation Function 2), com salt aleatório e múltiplas iterações.
- * Saída do hash: base64(salt) + ":" + base64(hash)</pre>
+ * Saída do hash: base64(salt) + ":" + base64(hash)
  * Evita armazenar senha em texto puro no banco.
  * Usa salt para evitar ataques com rainbow tables.
  * Usa iterações para aumentar o custo de brute force.

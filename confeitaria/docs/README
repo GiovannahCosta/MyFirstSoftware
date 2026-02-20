@@ -1,0 +1,30 @@
+# Documentação interna (Eclipse)
+
+Este arquivo é voltado para quem está abrindo o projeto dentro do Eclipse e quer:
+- entender rapidamente o que é a aplicação
+- saber como rodar
+- acessar a documentação gerada pelo Javadoc
+
+## Onde está a documentação
+
+- Documentação HTML gerada pelo Javadoc:
+  - `confeitaria/docs/index.html`
+
+- Visão geral (texto base usado pelo Javadoc overview):
+  - `confeitaria/docs-src/overview.html`
+
+## Como rodar no Eclipse
+
+1. Abra o projeto no Eclipse
+2. Localize a classe `app.Main`
+3. Execute como `Java Application`
+
+Se o banco não estiver configurado ou acessível, a aplicação pode demorar mais ou exibir erros no console.
+
+## Tempo de espera na primeira inicialização
+
+Antes de abrir a tela inicial, o sistema:
+- cria/garante as tabelas do banco
+- executa o seed inicial
+
+Isso pode causar atraso na primeira abertura, dependendo do seed e do banco.

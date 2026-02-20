@@ -9,50 +9,58 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Controller auxiliar de "View de Carrinho"
- * Este controller existe para montar dados que a UI do carrinho precisa exibir, sem que a View tenha que reimplementar regras e consultas repetidas
- * Responsável por: ler o estado atual do carrinho em memória ({@link CartSession}), para cada item do carrinho (productId → qty), 
- * carregar o {@link Product} completo, 
- * calcular preço unitário e total por item,  
- * retornar uma estrutura pronta para a View (rows + subtotal)
- * usa {@link ControllerShop} internamente para buscar produtos no banco e converte
- * falhas em {@link DataAccessException}
+ * Controller auxiliar para a View de carrinho.
+ * Existe para montar os dados que a interface do carrinho precisa exibir sem duplicar regras e consultas na View.
+ * Lê o estado atual do carrinho em memória ({@link CartSession}) e transforma em uma estrutura pronta para exibição:
+ * - carrega o Product completo a partir do id do produto
+ * - calcula preço unitário e total por item
+ * - calcula subtotal do carrinho
+ * Retorna essas informações para a View através de CartViewData.
+ *
+ * As consultas ao banco são delegadas ao {@link ControllerShop}.
+ * Qualquer falha de acesso a dados é convertida para {@link DataAccessException} pelo ControllerShop.
  */
-
 public class ControllerCartView {
-	
+
 	/**
-	 * Controller de loja usado para carregar produtos pelo id (delegando persistência)
-	 * Mantém a regra "buscar produto por id" centralizada em um único local (shop).
+	 * Controller de loja usado para carregar produtos pelo id.
+	 * Centraliza a regra de consulta de produto e a conversão de erros de acesso em DataAccessException.
 	 */
     private final ControllerShop controllerShop;
 
     /**
      * Construtor padrão.
-     * Instancia um {@link ControllerShop} padrão.
+     * Instancia um ControllerShop padrão para que este controller consiga consultar produtos.
      */
     public ControllerCartView() {
         this.controllerShop = new ControllerShop();
     }
-    
+
     /**
      * Construtor com injeção de dependência.
+     * Permite fornecer um ControllerShop já configurado (por exemplo, para testes).
+     *
      * @param controllerShop controller usado para consultas de produtos (não deve ser null)
      */
     public ControllerCartView(ControllerShop controllerShop) {
         this.controllerShop = controllerShop;
     }
-    
+
     /**
      * Carrega os dados do carrinho para exibição em tabela.
-     * Inicializa lista de linhas ({@link CartRow}) e subtotal.
-     * Itera por {@link CartSession#getItems()} (productId → qty).
-     * Ignora itens inválidos (id null, qty null ou qty &lt;= 0)
-     * Busca o {@link Product} pelo id via {@link ControllerShop#findProductById(Integer)}
-     * Se não existir, ignora
-     * Calcula unitário (base + size + flavorLevel) e total (unit * qty).
-     * Acumula no subtotal e adiciona uma linha.
-     * @return objeto {@link CartViewData} contendo linhas e subtotal
+     *
+     * Funcionamento:
+     * 1. Inicializa lista de linhas (CartRow) e subtotal.
+     * 2. Itera por {@link CartSession#getItems()} no formato productId para qty.
+     * 3. Ignora itens inválidos (id null, qty null ou qty menor ou igual a 0).
+     * 4. Busca o Product pelo id via {@link ControllerShop#findProductById(Integer)}.
+     * 5. Se o produto não existir (null), ignora o item.
+     * 6. Calcula o preço unitário com {@link #computeUnitPrice(Product)}.
+     * 7. Calcula total do item (unit * qty).
+     * 8. Soma no subtotal e adiciona uma CartRow na lista.
+     * 9. Retorna um {@link CartViewData} com as linhas e o subtotal.
+     *
+     * @return objeto CartViewData contendo linhas e subtotal
      * @throws DataAccessException se ocorrer falha ao buscar produtos no banco
      */
     public CartViewData loadCartData() throws DataAccessException {
@@ -65,7 +73,7 @@ public class ControllerCartView {
 
             if (productId == null || qty == null || qty <= 0) continue;
 
-            Product p = controllerShop.findProductById(productId); // pode retornar null
+            Product p = controllerShop.findProductById(productId);
             if (p == null) continue;
 
             double unit = computeUnitPrice(p);
@@ -77,23 +85,34 @@ public class ControllerCartView {
 
         return new CartViewData(rows, subtotal);
     }
-    
-    
+
     /**
      * Remove um item do carrinho em memória.
-     * Valida se o {@code productId} não é null
-     * Chama {@link CartSession.remove(Integer)}
+     *
+     * Funcionamento:
+     * 1. Valida se o productId não é null.
+     * 2. Chama {@link CartSession#remove(Integer)} para remover do mapa interno da sessão.
+     *
      * @param productId id do produto a remover
      */
     public void removeByProductId(Integer productId) {
         if (productId == null) return;
         CartSession.remove(productId);
     }
-    
-    
+
     /**
-     * Calcula o preço unitário "final" de um produto: unit = basePrice + size.price + flavorLevel.price, de acordo com regra de negócio
-     * @param p produto completo (com size e flavor/level preenchidos)
+     * Calcula o preço unitário final de um produto.
+     *
+     * Regra usada:
+     * unit = basePrice + size.price + flavor.level.price
+     *
+     * Funcionamento:
+     * 1. Usa basePrice ou 0 se estiver null.
+     * 2. Soma o preço do tamanho (Size.price) quando existir.
+     * 3. Soma o preço do nível do sabor (FlavorLevel.price) quando existir.
+     * 4. Retorna a soma como preço unitário final.
+     *
+     * @param p produto completo (com size e flavor/level preenchidos quando aplicável)
      * @return preço unitário final
      */
     private static double computeUnitPrice(Product p) {
@@ -106,36 +125,38 @@ public class ControllerCartView {
 
    /**
     * Linha do carrinho para exibição em tabela.
-    * Mantém os campos já calculados para a View (não precisa recalcular na UI)
+    * Mantém os campos já calculados para a View, evitando que a UI recalcule valores.
     */
     public static class CartRow {
+
     	/**
     	 * Identificador do produto (chave do carrinho).
     	 */
         private final Integer productId;
-        
+
         /**
          * Nome do produto para exibição.
          */
         private final String productName;
-        
+
         /**
          * Quantidade escolhida do produto.
          */
         private final Integer qty;
-        
+
         /**
-         * Preço unitário calculado (base + size + level)
+         * Preço unitário calculado.
          */
         private final Double unit;
-        
+
         /**
-         * Total do item (unit * qty).
+         * Total do item calculado como unit * qty.
          */
         private final Double total;
-        
+
         /**
          * Constrói uma linha do carrinho.
+         *
          * @param productId id do produto
          * @param productName nome do produto
          * @param qty quantidade
@@ -150,30 +171,63 @@ public class ControllerCartView {
             this.total = total;
         }
 
+        /**
+         * Retorna o id do produto associado à linha.
+         *
+         * @return id do produto
+         */
         public Integer getProductId() { return productId; }
+
+        /**
+         * Retorna o nome do produto associado à linha.
+         *
+         * @return nome do produto
+         */
         public String getProductName() { return productName; }
+
+        /**
+         * Retorna a quantidade do item na linha.
+         *
+         * @return quantidade
+         */
         public Integer getQty() { return qty; }
+
+        /**
+         * Retorna o preço unitário calculado.
+         *
+         * @return preço unitário
+         */
         public Double getUnit() { return unit; }
+
+        /**
+         * Retorna o total calculado do item.
+         *
+         * @return total do item
+         */
         public Double getTotal() { return total; }
     }
-    
+
     /**
-     * Estrutura agregada para a View do carrinho
-     * Retorna lista de linhas (itens) e subtotal (soma de todos os totais)
+     * Estrutura agregada retornada para a View do carrinho.
+     * Contém:
+     * - linhas prontas para a tabela
+     * - subtotal calculado como soma de todos os totais
      */
     public static class CartViewData {
+
     	/**
-    	 * Linhas prontas para a tabela.
+    	 * Linhas prontas para exibição.
     	 */
         private final List<CartRow> rows;
-        
+
         /**
-         * Subtotal do carrinho (sem taxa de entrega)
+         * Subtotal do carrinho calculado.
          */
         private final Double subtotal;
-        
+
         /**
          * Cria o resultado de exibição do carrinho.
+         *
          * @param rows linhas
          * @param subtotal subtotal
          */
@@ -182,7 +236,18 @@ public class ControllerCartView {
             this.subtotal = subtotal;
         }
 
+        /**
+         * Retorna as linhas do carrinho.
+         *
+         * @return lista de linhas
+         */
         public List<CartRow> getRows() { return rows; }
+
+        /**
+         * Retorna o subtotal do carrinho.
+         *
+         * @return subtotal
+         */
         public Double getSubtotal() { return subtotal; }
     }
 }

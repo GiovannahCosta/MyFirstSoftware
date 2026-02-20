@@ -13,22 +13,83 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Tela de administração de produtos.
+ * Permite cadastrar um novo produto (criando também um novo sabor) e listar os produtos existentes.
+ * Também permite excluir um produto selecionado na tabela.
+ * Utiliza ControllerProductAdmin para carregar dados do banco e executar as operações.
+ */
 public class ViewProducts extends JFrame {
 
+    /**
+     * Controller da área administrativa de produtos.
+     * Responsável por:
+     * - listar níveis de sabor e tamanhos para os combos
+     * - criar produto com novo sabor
+     * - listar produtos para a tabela
+     * - excluir produto
+     */
     private final ControllerProductAdmin controller = new ControllerProductAdmin();
 
+    /**
+     * Campo de texto do nome do produto a ser cadastrado.
+     */
     private JTextField fieldProductName;
+
+    /**
+     * Campo de texto do preço base do produto.
+     * O valor é convertido para Double em onSave().
+     */
     private JTextField fieldBasePrice;
+
+    /**
+     * Campo de texto do nome do sabor (novo).
+     * A tela assume que o sabor será criado junto do produto.
+     */
     private JTextField fieldFlavorName;
+
+    /**
+     * Campo de texto multilinha da descrição do produto.
+     * Pode ser vazio, e é enviado como null ou string (dependendo do conteúdo) para o controller.
+     */
     private JTextArea fieldDescription;
+
+    /**
+     * ComboBox de nível do sabor (FlavorLevel).
+     * É carregado a partir do banco em loadCombos().
+     */
     private JComboBox<FlavorLevel> comboFlavorLevel;
+
+    /**
+     * ComboBox de tamanho (Size).
+     * É carregado a partir do banco em loadCombos().
+     */
     private JComboBox<Size> comboSize;
 
+    /**
+     * Tabela que lista os produtos cadastrados.
+     * Cada linha representa um Product da lista products.
+     */
     private JTable tableProducts;
+
+    /**
+     * Modelo da tabela de produtos.
+     * Colunas:
+     * Produto, Sabor, Nível, Tamanho, Preço final.
+     */
     private DefaultTableModel tableModel;
 
+    /**
+     * Lista de produtos carregada do banco.
+     * O índice nesta lista corresponde ao índice da linha na tableProducts.
+     * É usada em onDelete() para identificar o produto selecionado.
+     */
     private List<Product> products = new ArrayList<>();
 
+    /**
+     * Construtor da tela.
+     * Configura a janela, monta o painel principal, carrega os combos e carrega a tabela.
+     */
     public ViewProducts() {
         configureFrame();
         setContentPane(buildMainPanel());
@@ -36,6 +97,14 @@ public class ViewProducts extends JFrame {
         refreshTable();
     }
 
+    /**
+     * Configura propriedades do JFrame:
+     * - título
+     * - operação de fechamento
+     * - tamanho
+     * - centralização
+     * - cor de fundo do tema
+     */
     private void configureFrame() {
         setTitle("Produtos (Admin) - Sistema de Confeitaria");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -44,6 +113,19 @@ public class ViewProducts extends JFrame {
         getContentPane().setBackground(ViewTheme.BACKGROUND);
     }
 
+    /**
+     * Monta o painel principal da tela.
+     *
+     * Funcionamento:
+     * 1. Cria painel raiz com BorderLayout.
+     * 2. Adiciona cabeçalho com o título.
+     * 3. Adiciona conteúdo em duas colunas:
+     *    - formulário de cadastro
+     *    - tabela de produtos
+     * 4. Envolve os painéis de conteúdo em cards (wrapCard) para padronizar visual.
+     *
+     * @return painel principal
+     */
     private JPanel buildMainPanel() {
         JPanel panel = ViewTheme.createPanel(24, 24, 24, 24);
         panel.setLayout(new BorderLayout(16, 16));
@@ -59,6 +141,11 @@ public class ViewProducts extends JFrame {
         return panel;
     }
 
+    /**
+     * Monta o cabeçalho da tela com o título.
+     *
+     * @return componente do cabeçalho
+     */
     private Component buildHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(ViewTheme.BACKGROUND);
@@ -66,6 +153,21 @@ public class ViewProducts extends JFrame {
         return header;
     }
 
+    /**
+     * Monta o painel de formulário e inicializa campos e combos.
+     *
+     * Funcionamento:
+     * 1. Cria painel vertical.
+     * 2. Adiciona campo de nome do produto.
+     * 3. Adiciona campo de preço base.
+     * 4. Adiciona campo de nome do sabor.
+     * 5. Adiciona combo de nível do sabor com renderer de nome.
+     * 6. Adiciona combo de tamanho com renderer de nome.
+     * 7. Adiciona campo de descrição com scroll.
+     * 8. Adiciona painel de botões.
+     *
+     * @return componente do formulário
+     */
     private Component buildFormPanel() {
         JPanel form = new JPanel();
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
@@ -115,6 +217,17 @@ public class ViewProducts extends JFrame {
         return form;
     }
 
+    /**
+     * Monta o painel de botões do formulário.
+     *
+     * Botões:
+     * - Novo: limpa o formulário
+     * - Salvar: chama onSave()
+     * - Recarregar: chama refreshTable()
+     * - Excluir: chama onDelete()
+     *
+     * @return componente com os botões
+     */
     private Component buildButtonsPanel() {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         buttons.setBackground(ViewTheme.CARD_BG);
@@ -139,6 +252,16 @@ public class ViewProducts extends JFrame {
         return buttons;
     }
 
+    /**
+     * Monta o painel da tabela de produtos.
+     *
+     * Funcionamento:
+     * 1. Cria tableModel com colunas e células não editáveis.
+     * 2. Cria tableProducts e define seleção única.
+     * 3. Coloca tabela em JScrollPane e aplica borda do tema.
+     *
+     * @return componente do painel de tabela
+     */
     private Component buildTablePanel() {
         JPanel tablePanel = new JPanel(new BorderLayout(0, 8));
         tablePanel.setBackground(ViewTheme.CARD_BG);
@@ -159,6 +282,17 @@ public class ViewProducts extends JFrame {
         return tablePanel;
     }
 
+    /**
+     * Carrega os combos de nível de sabor e tamanho.
+     *
+     * Funcionamento:
+     * 1. Limpa comboFlavorLevel e adiciona itens retornados por controller.listFlavorLevels().
+     * 2. Limpa comboSize e adiciona itens retornados por controller.listSizes().
+     * 3. Se algum combo ficar vazio, avisa o usuário que pode faltar seed no banco.
+     *
+     * Tratamento de erro:
+     * - DataAccessException: exibe mensagem de erro.
+     */
     private void loadCombos() {
         try {
             comboFlavorLevel.removeAllItems();
@@ -183,6 +317,20 @@ public class ViewProducts extends JFrame {
         }
     }
 
+    /**
+     * Recarrega a lista de produtos do banco e atualiza a tabela.
+     *
+     * Funcionamento:
+     * 1. Chama controller.listProducts() e armazena em products.
+     * 2. Limpa as linhas do tableModel.
+     * 3. Para cada produto:
+     *    - extrai strings de sabor, nível e tamanho tratando null
+     *    - calcula preço final com computeFinalUnitPrice(Product)
+     *    - adiciona uma linha na tabela
+     *
+     * Tratamento de erro:
+     * - DataAccessException: exibe mensagem de erro.
+     */
     private void refreshTable() {
         try {
             products = controller.listProducts();
@@ -208,6 +356,15 @@ public class ViewProducts extends JFrame {
         }
     }
 
+    /**
+     * Calcula o preço final unitário exibido na tabela.
+     *
+     * Regra usada:
+     * finalUnitPrice = basePrice + size.price + flavor.level.price
+     *
+     * @param p produto para cálculo
+     * @return preço final unitário
+     */
     private static double computeFinalUnitPrice(Product p) {
         double base = p.getBasePrice() != null ? p.getBasePrice() : 0.0;
         double sizePrice = (p.getSize() != null && p.getSize().getPrice() != null) ? p.getSize().getPrice() : 0.0;
@@ -217,6 +374,24 @@ public class ViewProducts extends JFrame {
         return base + sizePrice + levelPrice;
     }
 
+    /**
+     * Salva um novo produto com um novo sabor.
+     *
+     * Funcionamento:
+     * 1. Lê e normaliza textos do formulário.
+     * 2. Obtém o nível de sabor e o tamanho selecionados.
+     * 3. Converte o preço base para Double aceitando vírgula ou ponto.
+     * 4. Chama controller.createProductWithNewFlavor(...) para criar sabor e produto.
+     * 5. Se der certo:
+     *    - limpa o formulário
+     *    - recarrega a tabela
+     *    - mostra mensagem de sucesso
+     *
+     * Tratamento de erro:
+     * - Preço inválido: exibe mensagem e retorna.
+     * - ValidationException: exibe aviso.
+     * - DataAccessException: exibe erro.
+     */
     private void onSave() {
         String productName = text(fieldProductName);
         String basePriceText = text(fieldBasePrice);
@@ -247,6 +422,24 @@ public class ViewProducts extends JFrame {
         }
     }
 
+    /**
+     * Exclui o produto selecionado na tabela.
+     *
+     * Funcionamento:
+     * 1. Obtém a linha selecionada.
+     * 2. Se não houver seleção válida, mostra mensagem e retorna.
+     * 3. Obtém o Product correspondente na lista products.
+     * 4. Pede confirmação ao usuário.
+     * 5. Se confirmado, chama controller.deleteProduct(selected).
+     * 6. Se der certo:
+     *    - limpa formulário
+     *    - recarrega tabela
+     *    - mostra mensagem de sucesso
+     *
+     * Tratamento de erro:
+     * - ValidationException: exibe aviso.
+     * - DataAccessException: exibe erro.
+     */
     private void onDelete() {
         int row = tableProducts.getSelectedRow();
         if (row < 0 || row >= products.size()) {
@@ -279,6 +472,9 @@ public class ViewProducts extends JFrame {
         }
     }
 
+    /**
+     * Limpa os campos do formulário e reseta os combos para o primeiro item quando possível.
+     */
     private void clearForm() {
         fieldProductName.setText("");
         fieldBasePrice.setText("");
@@ -288,10 +484,24 @@ public class ViewProducts extends JFrame {
         if (comboSize.getItemCount() > 0) comboSize.setSelectedIndex(0);
     }
 
+    /**
+     * Lê o texto de um JTextField de forma segura.
+     * Retorna string vazia quando o campo estiver null ou com texto null.
+     *
+     * @param f campo a ler
+     * @return texto normalizado (trim) ou vazio
+     */
     private static String text(JTextField f) {
         return f.getText() == null ? "" : f.getText().trim();
     }
 
+    /**
+     * Envolve um componente com estilo de card.
+     * Aplica background, borda e padding.
+     *
+     * @param content componente interno
+     * @return painel estilizado
+     */
     private JPanel wrapCard(Component content) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(ViewTheme.CARD_BG);
@@ -302,13 +512,40 @@ public class ViewProducts extends JFrame {
         return card;
     }
 
+    /**
+     * Aplica estilo padrão do tema a um JComboBox.
+     * Ajusta background, foreground e fonte.
+     *
+     * @param combo combo a estilizar
+     */
     private void styleComboBox(JComboBox<?> combo) {
         combo.setBackground(ViewTheme.INPUT_BG);
         combo.setForeground(ViewTheme.TEXT);
         combo.setFont(ViewTheme.FONT_LABEL);
     }
 
+    /**
+     * Renderer de itens para combos que exibem objetos (FlavorLevel e Size).
+     * Converte o objeto em texto visível no combo usando getName().
+     */
     private static class NamedCellRenderer extends DefaultListCellRenderer {
+
+        /**
+         * Retorna o componente renderizado para um item do combo.
+         *
+         * Funcionamento:
+         * 1. Chama o renderer padrão (super).
+         * 2. Se value for FlavorLevel, define o texto como o nome do nível.
+         * 3. Se value for Size, define o texto como o nome do tamanho.
+         * 4. Retorna o próprio renderer.
+         *
+         * @param list lista do combo
+         * @param value valor do item
+         * @param index índice do item
+         * @param isSelected indica se está selecionado
+         * @param cellHasFocus indica se tem foco
+         * @return componente que representa o item
+         */
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
                                                       boolean cellHasFocus) {

@@ -10,54 +10,64 @@ import java.util.List;
 import model.entities.FlavorLevel;
 
 /**
- * Repositório responsável pela persistência e consulta de níveis de sabores
- * na tabela {@code flavor_level}. Abstrai o acesso a dados via JDBC.
+ * Repositório responsável pela persistência e consulta de níveis de sabor
+ * na tabela flavor_level.
+ * Abstrai o acesso a dados via JDBC, centralizando SQL e mapeamento de ResultSet
+ * para objetos do tipo FlavorLevel.
  */
-
 public class RepositoryFlavorLevel {
 
     /**
-     * INSERT na tabela flavor. Exige que o flavor_level já exista (id_flavor = flavor_level.id)
+     * SQL de inserção de um nível de sabor na tabela flavor_level.
+     * Insere nome e preço.
      */
-    public static final String SQL_INSERT = 
+    public static final String SQL_INSERT =
             "INSERT INTO flavor_level(name, price) VALUES (?, ?)";
-    
-    
+
     /**
-     * DELETE por id.
+     * SQL de exclusão de um nível de sabor pelo id.
      */
     public static final String SQL_DELETE =
             "DELETE FROM flavor_level WHERE id = ?";
 
-
     /**
-     * SELECT por id
+     * SQL de busca de um nível de sabor pelo id.
      */
-    public static final String SQL_FIND_BY_ID = 
+    public static final String SQL_FIND_BY_ID =
             "SELECT id, name, price "
             + "FROM flavor_level "
             + "WHERE id = ?";
-    
+
     /**
-	 * SELECT por nome.
+	 * SQL de busca de um nível de sabor pelo nome.
 	 */
 	private static final String SQL_FIND_BY_NAME =
 			"SELECT id, name, price "
             + "FROM flavor_level "
             + "WHERE name = ?";
-    
+
     /**
-	 * SELECT de todos os registros.
+	 * SQL de listagem de todos os níveis de sabor.
 	 */
 	private static final String SQL_FIND_ALL =
 			"SELECT id, name, price FROM flavor_level";
-    
-    
+
     /**
-	 * Insere um novo nível de sabor. Se o nome já existir (UNIQUE), nenhuma linha é inserida.
+	 * Insere um novo nível de sabor.
 	 *
-	 * @param flavor_level nível de sabor a ser persistido (não nulo)
-	 * @return true se pelo menos uma linha foi inserida, false caso contrário (ex.: nome duplicado)
+     * Funcionamento:
+     * 1. Abre conexão com o banco.
+     * 2. Prepara o SQL_INSERT.
+     * 3. Preenche os parâmetros (name e price).
+     * 4. Executa o INSERT.
+     * 5. Retorna true se alguma linha foi inserida.
+     *
+	 * Observação:
+	 * Se o banco tiver uma restrição UNIQUE para o nome, uma tentativa de inserir um nome já existente
+	 * pode resultar em falha (SQLException) dependendo da configuração do banco/driver.
+	 *
+	 * @param level nível de sabor a ser persistido (não nulo)
+	 * @return true se pelo menos uma linha foi inserida, false caso contrário
 	 * @throws SQLException em erro de acesso ao banco
 	 */
 	public boolean createFlavorLevel(FlavorLevel level) throws SQLException {
@@ -73,7 +83,14 @@ public class RepositoryFlavorLevel {
     /**
 	 * Remove um nível de sabor pelo id.
 	 *
-	 * @param flavor_level nível de sabor a ser removido (getId() deve ser o id da tabela flavor_level)
+     * Funcionamento:
+     * 1. Abre conexão com o banco.
+     * 2. Prepara o SQL_DELETE.
+     * 3. Define o parâmetro id com level.getId().
+     * 4. Executa o DELETE.
+     * 5. Retorna true se alguma linha foi removida.
+     *
+	 * @param level nível de sabor a ser removido (getId() deve estar preenchido)
 	 * @return true se pelo menos uma linha foi removida
 	 * @throws SQLException em erro de acesso ao banco
 	 */
@@ -86,23 +103,29 @@ public class RepositoryFlavorLevel {
 		}
 	}
 
-
     /**
 	 * Busca nível de sabor pelo identificador.
 	 *
+     * Funcionamento:
+     * 1. Abre conexão com o banco.
+     * 2. Prepara o SQL_FIND_BY_ID.
+     * 3. Define o id como parâmetro.
+     * 4. Executa a consulta.
+     * 5. Se houver resultado, converte com mapResultSetToFlavorLevel.
+     * 6. Se não houver, retorna null.
+     *
 	 * @param id identificador do nível de sabor
-	 * @return o nível sabor encontrado ou null se não existir
+	 * @return o nível de sabor encontrado ou null se não existir
 	 * @throws SQLException em erro de acesso ao banco de dados
 	 */
 	public FlavorLevel findByIdFlavorLevel(Integer id) throws SQLException {
 		try (Connection conn = DBConnection.getConnection();
 				PreparedStatement stmt = conn.prepareStatement(SQL_FIND_BY_ID)) {
 			stmt.setInt(1, id);
-			try(ResultSet rs = stmt.executeQuery()){
-                if(rs.next()){
+			try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
                     return mapResultSetToFlavorLevel(rs);
                 }
-
                 return null;
             }
 		}
@@ -111,28 +134,41 @@ public class RepositoryFlavorLevel {
     /**
 	 * Busca nível de sabor pelo nome.
 	 *
-	 * @param name nome do nível sabor
-	 * @return o nível sabor encontrado ou null se não existir
+     * Funcionamento:
+     * 1. Abre conexão com o banco.
+     * 2. Prepara o SQL_FIND_BY_NAME.
+     * 3. Define o nome como parâmetro.
+     * 4. Executa a consulta.
+     * 5. Se houver resultado, converte com mapResultSetToFlavorLevel.
+     * 6. Se não houver, retorna null.
+     *
+	 * @param name nome do nível de sabor
+	 * @return o nível de sabor encontrado ou null se não existir
 	 * @throws SQLException em erro de acesso ao banco de dados
 	 */
 	public FlavorLevel findByNameFlavorLevel(String name) throws SQLException {
 		try (Connection conn = DBConnection.getConnection();
 				PreparedStatement stmt = conn.prepareStatement(SQL_FIND_BY_NAME)) {
 			stmt.setString(1, name);
-			try(ResultSet rs = stmt.executeQuery()){
-                if(rs.next()){
+			try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
                     return mapResultSetToFlavorLevel(rs);
                 }
-
                 return null;
             }
 		}
 	}
 
     /**
-	 * Lista todas os níveis de sabor.
+	 * Lista todos os níveis de sabor.
+     *
+     * Funcionamento:
+     * 1. Abre conexão com o banco.
+     * 2. Executa o SQL_FIND_ALL.
+     * 3. Para cada linha do ResultSet, mapeia para FlavorLevel.
+     * 4. Retorna a lista (pode ser vazia).
 	 *
-	 * @return lista de níveis sabor (nunca null, pode ser vazia)
+	 * @return lista de níveis de sabor (nunca null, pode ser vazia)
 	 * @throws SQLException em erro de acesso ao banco de dados
 	 */
 	public List<FlavorLevel> findAllFlavorLevel() throws SQLException {
@@ -149,7 +185,7 @@ public class RepositoryFlavorLevel {
 
     /**
 	 * Mapeia a linha atual do ResultSet para um objeto FlavorLevel.
-	 * Não avança o cursor; espera-se que o chamador tenha posicionado com next().
+	 * Não avança o cursor; espera-se que o chamador já tenha posicionado com next().
 	 *
 	 * @param rs ResultSet posicionado na linha desejada
 	 * @return instância de FlavorLevel preenchida com os dados da linha
@@ -162,5 +198,4 @@ public class RepositoryFlavorLevel {
 		level.setPrice(rs.getDouble("price"));
 		return level;
 	}
-    
 }
